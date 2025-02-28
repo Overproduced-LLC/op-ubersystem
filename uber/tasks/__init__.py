@@ -57,9 +57,7 @@ def run_startup_tasks(*args, **kwargs):
 
 
 from uber.tasks import email  # noqa: F401, E402
-from uber.tasks import groups  # noqa: F401, E402
 from uber.tasks import health  # noqa: F401, E402
-from uber.tasks import redis  # noqa: F401, E402
 from uber.tasks import registration  # noqa: F401, E402
 from uber.tasks import security  # noqa: F401, E402
 from uber.tasks import sms  # noqa: F401, E402

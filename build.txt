@@ -1,0 +1,2 @@
+docker build . --platform="linux/amd64" -t 257394449510.dkr.ecr.us-east-1.amazonaws.com/op-ubersystem:main
+docker push 257394449510.dkr.ecr.us-east-1.amazonaws.com/op-ubersystem:main

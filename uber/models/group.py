@@ -132,15 +132,7 @@ class Group(MagModel, TakesPaymentMixin):
 
     @property
     def signnow_document_signed(self):
-        from uber.models import Session, SignedDocument
-
-        signed = False
-        with Session() as session:
-            document = session.query(SignedDocument).filter_by(model="Group", fk_id=self.id).first()
-            if document and document.signed:
-                signed = True
-
-        return signed
+        signed = True
     
     def convert_to_shared(self, session):
         self.tables = 0
