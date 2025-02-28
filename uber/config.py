@@ -1345,9 +1345,7 @@ def _unrepr(d):
 _unrepr(_config['appconf'])
 c.APPCONF = _config['appconf'].dict()
 c.SENTRY = _config['sentry'].dict()
-print(c.SENTRY)
 c.HSTS = _config['hsts'].dict()
-print(c.HSTS)
 c.REDISCONF = _config['redis'].dict()
 c.REDIS_PREFIX = c.REDISCONF['prefix']
 c.REDIS_STORE = redis.Redis(host=c.REDISCONF['host'], port=c.REDISCONF['port'],

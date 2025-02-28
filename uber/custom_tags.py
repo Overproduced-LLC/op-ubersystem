@@ -723,7 +723,7 @@ def pages(page, count):
         extra_class = ' pagination-lg'
     elif len(pages) > 100:
         extra_class = ' pagination-sm'
-    return safe_string(f'<ul class="pagination flex-wrap{extra_class}">{' '.join(map(str, pages))}</ul>')
+    return safe_string(f'<ul class="pagination flex-wrap{extra_class}">{" ".join(map(str, pages))}</ul>')
 
 
 @JinjaEnv.jinja_filter
