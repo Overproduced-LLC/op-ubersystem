@@ -321,7 +321,7 @@ _set_current_thread_ids_from(threading.current_thread())
 log.info("Loading plugins")
 for plugin_name in c.PLUGINS:
     log.info(f"Loading plugin {plugin_name}")
-    sys.path.append(f"/app/plugins/{plugin_name}")
+    sys.path.append(f"/plugins/{plugin_name}")
     plugin = importlib.import_module(plugin_name)
     if callable(getattr(plugin, 'on_load', None)):
         plugin.on_load()
