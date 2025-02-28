@@ -14,9 +14,9 @@ if [ "$1" = 'uber' ]; then
     ./env/bin/python /app/sep.py alembic upgrade heads
     ./env/bin/python /app/run_server.py
 elif [ "$1" = 'celery-beat' ]; then
-    celery -A uber.tasks beat --loglevel=DEBUG --pidfile=
+    ./env/bin/celery -A uber.tasks beat --loglevel=DEBUG --pidfile=
 elif [ "$1" = 'celery-worker' ]; then
-    celery -A uber.tasks worker --loglevel=DEBUG
+    ./env/bin/celery -A uber.tasks worker --loglevel=DEBUG
 else
     exec "$@"
 fi
