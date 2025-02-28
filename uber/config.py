@@ -1318,7 +1318,7 @@ def parse_config(plugin_name, module_dir):
 
 
 c = Config()
-_config = parse_config("uber", pathlib.Path("/uber"))  # outside this module, we use the above c global instead of using this directly
+_config = parse_config("uber", pathlib.Path("uber"))  # outside this module, we use the above c global instead of using this directly
 db_connection_string = os.environ.get('DB_CONNECTION_STRING')
 
 for conf, val in _config['secret'].items():
@@ -1345,7 +1345,9 @@ def _unrepr(d):
 _unrepr(_config['appconf'])
 c.APPCONF = _config['appconf'].dict()
 c.SENTRY = _config['sentry'].dict()
+print(c.SENTRY)
 c.HSTS = _config['hsts'].dict()
+print(c.HSTS)
 c.REDISCONF = _config['redis'].dict()
 c.REDIS_PREFIX = c.REDISCONF['prefix']
 c.REDIS_STORE = redis.Redis(host=c.REDISCONF['host'], port=c.REDISCONF['port'],
