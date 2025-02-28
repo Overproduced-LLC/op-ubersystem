@@ -1,12 +1,7 @@
 {% extends "./preregistration/preregbase.html" %}
-{% import "forms/group.html" as group_fields with context %}
 {% import "forms/account.html" as account_fields with context %}
 {% import 'forms/macros.html' as form_macros with context %}
-{% if is_prereg_dealer %}
-{% set title_text = "Dealer Registration Step 2 of 4: Personal Info" %}
-{% else %}
 {% set title_text = "Registration Step 1 of 4: Personal Info" %}
-{% endif %}
 {% block content %}
 {% set original_location = ".." ~ c.PAGE_PATH %}
 <div class="card">
@@ -17,48 +12,27 @@
 
 {#- The action is set to "post_form" in order to bypass the NGINX cache. -#}
 <form novalidate method="post" id="prereg-form" action="post_form" class="form-horizontal" role="form">
-{% if attendee.group_id %}
-<input type="hidden" name="group_id" value="{{ attendee.group_id }}" />
-{% endif %}
 {% if edit_id %}
     <input type="hidden" name="edit_id" value="{{ edit_id }}" />
 {% endif %}
 <input type="hidden" name="is_prereg" value="True" />
 {{ csrf_token() }}
 
-{% if attendee.badge_type != c.PSEUDO_DEALER_BADGE %}
-{# Dealers shouldn't be able to select other badge types. #}
-  {% include "forms/prereg_fields.html" %}
-
-{% if forms and 'group_info' in forms %}
-  {% include "forms/group/group_info.html" %}
-{% endif %}
-{% endif %}
-
-{% if attendee.badge_type == c.PSEUDO_DEALER_BADGE %}
-{# Dealer reg does not involve payment, so they cannot select badge add-ons until after applying. #}
-  <h2 class="h3 text-center">{{ c.DEALER_TERM|title }} Personal Info</h2>
-  {{ forms['badge_extras'].badge_type }}
-{% else %}
-  {% include "forms/attendee/badge_extras.html" %}
-  {# hidden field to keep promo code if an attendee clicked the group invite link #}
-  <input type="hidden" name="promo_code_code" value="{{ promo_code_code }}" />
-{% endif %}
+{% include "forms/attendee/badge_extras.html" %}
+{# hidden field to keep promo code if an attendee clicked the group invite link #}
+<input type="hidden" name="promo_code_code" value="{{ promo_code_code }}" />
 
 {% include "forms/attendee/personal_info.html" %}
 {% include "forms/attendee/consents.html" %}
 
   {# Deprecated forms included for backwards compatibility with old plugins #}
-  {% include "groupform.html" %}
   {% include "regform.html" %}
 
   {% if not edit_id %}
       <button type="submit" class="btn btn-primary" value="Next">Next</button>
   {% else %}
       <button type="submit" class="btn btn-primary" value="Update">Update</button>
-      {% if attendee.badge_type != c.PSEUDO_DEALER_BADGE %}
       <button type="submit" class="btn btn-primary" name="go_to_cart" value="1">Update & Go to Cart</button>
-      {% endif %}
   {% endif %}
 
   {% if edit_id or cart_not_empty %}
@@ -68,10 +42,6 @@
 </form>
 </div>
 </div>
-{% if is_prereg_dealer %}
-{{ "js/warn-before-logout-dealer.js"|serve_static_content }}
-{% else %}
 <div class="text-center"><em class="badge bg-dark fw-normal">Please note: your badge and any upgrades are not reserved until you complete the registration process{% if not c.AT_THE_CON %}, including payment{% endif %}.</em></div>
 {% if cart_not_empty %}{{ "js/warn-before-logout.js"|serve_static_content }}{% endif %}
-{% endif %}
 {% endblock %}

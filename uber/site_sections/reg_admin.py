@@ -18,7 +18,7 @@ from uber.config import c
 from uber.custom_tags import datetime_local_filter, time_day_local, pluralize, format_currency, readable_join
 from uber.decorators import ajax, all_renderable, csv_file, not_site_mappable, site_mappable
 from uber.errors import HTTPRedirect
-from uber.models import AdminAccount, ApiJob, ArtShowApplication, Attendee, Group, ModelReceipt, ReceiptItem, \
+from uber.models import AdminAccount, ApiJob, Attendee, Group, ModelReceipt, ReceiptItem, \
     ReceiptInfo, ReceiptTransaction, Tracking, WorkstationAssignment, EscalationTicket
 from uber.site_sections import devtools
 from uber.utils import check, get_api_service_from_server, normalize_email, normalize_email_legacy, valid_email, \
@@ -286,7 +286,6 @@ class Root:
         return {
             'attendee': model if isinstance(model, Attendee) else None,
             'group': model if isinstance(model, Group) else None,
-            'art_show_app': model if isinstance(model, ArtShowApplication) else None,
             'group_leader_receipt_id': group_leader_receipt.id if group_leader_receipt else None,
             'group_processing_fee': group_processing_fee,
             'receipt': receipt,
@@ -1254,14 +1253,7 @@ class Root:
                     results_name = 'accounts'
                     href_base = '{}/registration/form?id={}'
                 elif which_import == 'groups':
-                    if params.get('dealers', ''):
-                        status = c.DEALER_STATUS.get(int(params.get('dealer_status', 0)), None)
-                        if not status:
-                            message = "Invalid group status."
-                        else:
-                            results = service.group.dealers(status=status)
-                    else:
-                        results = service.group.export(query=query)
+                    results = service.group.export(query=query)
                     results_name = 'groups'
                     href_base = '{}/group_admin/form?id={}'
 

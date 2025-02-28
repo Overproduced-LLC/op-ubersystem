@@ -25,7 +25,6 @@ class Root:
             'Arrival Time', 'Bio',
             'Website', 'Facebook',
             'Twitter', 'Instagram', 'Twitch', 'Bandcamp', 'Discord', 'Other Social Media', 'Bio Pic', 'Bio Pic Link',
-            '# Panel Applications',
             '# of Autograph Sessions', 'Autograph Session Length (Minutes)',
             'Wants RI Meet & Greet', 'Meet & Greet Length (Minutes)',
             'Completed W9', 'Stage Plot',
@@ -37,9 +36,6 @@ class Root:
         for guest in [guest for guest in session.query(GuestGroup).all() if session.admin_can_see_guest_group(guest)]:
             absolute_pic_url = convert_to_absolute_url(getattr(guest.bio, 'pic_url', ''))
             absolute_stageplot_url = convert_to_absolute_url(getattr(guest.stage_plot, 'url', ''))
-            num_panels = 0 if not guest.group or not guest.group.leader or not guest.group.leader.submitted_panels \
-                else len(guest.group.leader.submitted_panels)
-
             out.writerow([
                 guest.group_type_label, guest.group.name, guest.email,
                 guest.payment, guest.vehicles, guest.num_hotel_rooms,
@@ -51,7 +47,7 @@ class Root:
                 getattr(guest.bio, 'twitter', ''), getattr(guest.bio, 'instagram', ''),
                 getattr(guest.bio, 'twitch', ''), getattr(guest.bio, 'bandcamp', ''),
                 getattr(guest.bio, 'discord', ''), getattr(guest.bio, 'other_social_media', ''),
-                getattr(guest.bio, 'pic_filename', ''), absolute_pic_url, num_panels,
+                getattr(guest.bio, 'pic_filename', ''), absolute_pic_url,
                 getattr(guest.autograph, 'num', ''), getattr(guest.autograph, 'length', ''),
                 getattr(guest.autograph, 'rock_island_autographs', ''), getattr(guest.autograph,
                                                                                 'rock_island_length', ''),
@@ -78,26 +74,6 @@ class Root:
                                     plan.extra_details])
                 out.writerow(content_row)
     
-    @csv_file
-    def panel_info_csv(self, out, session):
-        out.writerow(['Guest', 'App Status', 'Name', 'Description', 'Schedule Description', 'Length',
-                      'Department', 'Type of Panel', 'Location', 'Date/Time'])
-        for guest in [guest for guest in session.query(GuestGroup).all() if session.admin_can_see_guest_group(guest)]:
-            if guest.group and guest.group.leader:
-                for app in guest.group.leader.submitted_panels:
-                    out.writerow([
-                        guest.group.name, app.status_label,
-                        getattr(app.event, 'name', app.name),
-                        getattr(app.event, 'description', app.description),
-                        getattr(app.event, 'public_description', app.public_description),
-                        f"{app.event.minutes} minutes" if app.event else f"{app.length_label} (expected)",
-                        app.department_label,
-                        app.other_presentation if app.presentation == c.OTHER else app.presentation_label,
-                        getattr(app.event, 'location_label', '(not scheduled)'),
-                        app.event.timespan(minute_increment=30) if app.event else '(not scheduled)',
-                    ])
-
-
     @site_mappable
     def rock_island(self, session, message='', only_empty=None, id=None, **params):
         query = session.query(GuestGroup).options(

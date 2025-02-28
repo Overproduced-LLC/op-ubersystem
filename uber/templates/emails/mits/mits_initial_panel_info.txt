@@ -1,9 +1,0 @@
-{{ team.salutation }},
-
-You're receiving this email because your team ({{ team.name }}) was accepted to the MAGFest Indie Tabletop Showcase and you expressed interest in reserving a timeslot to host a tabletop-related panel. Tabletop panels will contact you with their decision.
-
-If you have any panel-related questions in the meantime, please email tabletoppanels@magfest.org
-
-If you have any non-panel MITS-related questions, you can always send those to mits@magfest.org
-
-{{ c.MITS_EMAIL_SIGNATURE }}

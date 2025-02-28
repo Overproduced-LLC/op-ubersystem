@@ -1,4 +1,0 @@
-{{ app.attendee.first_name }},
-Thank you for applying to be in the Artist Marketplace at {{ c.EVENT_NAME }} this year. We regret to inform you that your application "{{ app.name }}" has been declined.
-
-{{ c.ARTIST_MARKETPLACE_SIGNATURE }}

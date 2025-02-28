@@ -614,19 +614,11 @@ from uber.models.tracking import *  # noqa: F401,E402,F403
 from uber.models.types import *  # noqa: F401,E402,F403
 from uber.models.api import *  # noqa: F401,E402,F403
 from uber.models.hotel import *  # noqa: F401,E402,F403
-from uber.models.attendee_tournaments import *  # noqa: F401,E402,F403
-from uber.models.marketplace import *  # noqa: F401,E402,F403
-from uber.models.mivs import *  # noqa: F401,E402,F403
-from uber.models.mits import *  # noqa: F401,E402,F403
-from uber.models.panels import *  # noqa: F401,E402,F403
-from uber.models.attraction import *  # noqa: F401,E402,F403
 from uber.models.tabletop import *  # noqa: F401,E402,F403
 from uber.models.guests import *  # noqa: F401,E402,F403
-from uber.models.art_show import *  # noqa: F401,E402,F403
 
 # Explicitly import models used by the Session class to quiet flake8
 from uber.models.admin import AccessGroup, AdminAccount, WatchList, WorkstationAssignment  # noqa: E402
-from uber.models.art_show import ArtShowApplication, ArtShowBidder  # noqa: E402
 from uber.models.attendee import Attendee, AttendeeAccount  # noqa: E402
 from uber.models.badge_printing import PrintJob  # noqa: E402
 from uber.models.commerce import ModelReceipt  # noqa: E402
@@ -635,9 +627,6 @@ from uber.models.email import Email  # noqa: E402
 from uber.models.group import Group  # noqa: E402
 from uber.models.guests import GuestGroup  # noqa: E402
 from uber.models.hotel import LotteryApplication
-from uber.models.mits import MITSApplicant, MITSTeam  # noqa: E402
-from uber.models.mivs import IndieJudge, IndieGame, IndieStudio  # noqa: E402
-from uber.models.panels import PanelApplication, PanelApplicant  # noqa: E402
 from uber.models.promo_code import PromoCode, PromoCodeGroup  # noqa: E402
 from uber.models.tracking import Tracking  # noqa: E402
 
@@ -856,15 +845,7 @@ class Session(SessionManager):
             if 'guest_admin' in admin.read_or_write_access_set:
                 subqueries.append(self.query(Group).join(
                     GuestGroup, Group.id == GuestGroup.group_id).filter(
-                        ~GuestGroup.group_type.in_([c.BAND, c.MIVS])))
-
-            if 'band_admin' in admin.read_or_write_access_set:
-                subqueries.append(self.query(Group).join(
-                    GuestGroup, Group.id == GuestGroup.group_id).filter(
-                        GuestGroup.group_type == c.BAND))
-
-            if 'dealer_admin' in admin.read_or_write_access_set:
-                subqueries.append(self.query(Group).filter(Group.is_dealer))
+                        ~GuestGroup.group_type.in_([c.BAND])))
 
             if 'shifts_admin' in admin.read_or_write_access_set:
                 subqueries.append(self.query(Group).join(Group.leader).filter(
@@ -887,55 +868,15 @@ class Session(SessionManager):
             admin = self.current_admin_account()
             return_dict = {'created': self.query(Attendee).filter(
                 or_(Attendee.creator == admin.attendee, Attendee.id == admin.attendee.id))}
-
-            return_dict['band_admin'] = self.query(Attendee).outerjoin(Group, Attendee.group_id == Group.id).join(
-                GuestGroup, Group.id == GuestGroup.group_id).filter(
-                    or_(Attendee.ribbon.contains(c.BAND),
-                        and_(
-                            Attendee.group_id != None,
-                            Group.id == Attendee.group_id,
-                            GuestGroup.group_id == Group.id,
-                            GuestGroup.group_type == c.BAND)))
             
             return_dict['guest_admin'] = self.query(Attendee).outerjoin(Group, Attendee.group_id == Group.id).join(
-                GuestGroup, Group.id == GuestGroup.group_id).filter(
-                    ~Attendee.ribbon.contains(c.BAND),
-                    or_(Attendee.badge_type == c.GUEST_BADGE,
+                GuestGroup, Group.id == GuestGroup.group_id).filter(Attendee.badge_type == c.GUEST_BADGE,
                         and_(
                             Attendee.group_id != None,
                             Group.id == Attendee.group_id,
                             GuestGroup.group_id == Group.id,
-                            ~GuestGroup.group_type.in_([c.BAND, c.MIVS]))))
-
-            return_dict['panels_admin'] = self.query(Attendee).outerjoin(PanelApplicant).filter(
-                                                 or_(Attendee.ribbon.contains(c.PANELIST_RIBBON),
-                                                     Attendee.submitted_panels != None,  # noqa: E711
-                                                     Attendee.assigned_panelists != None,  # noqa: E711
-                                                     Attendee.panel_applicants != None,  # noqa: E711
-                                                     Attendee.panel_feedback != None))  # noqa: E711
-            return_dict['dealer_admin'] = self.query(Attendee).join(Group,
-                                                                    Attendee.group_id == Group.id
-                                                                    ).filter(Attendee.is_dealer)
-            return_dict['mits_admin'] = self.query(Attendee).join(MITSApplicant).filter(Attendee.mits_applicants)
-            return_dict['mivs_admin'] = (self.query(Attendee).join(Group, Attendee.group_id == Group.id)
-                                         .join(GuestGroup, Group.id == GuestGroup.group_id).filter(
-                                             and_(Group.id == Attendee.group_id,
-                                                  GuestGroup.group_id == Group.id, GuestGroup.group_type == c.MIVS)
-                                                  ))
-            return_dict['art_show_admin'] = self.query(Attendee
-                                                       ).outerjoin(
-                                                           ArtShowApplication,
-                                                           or_(ArtShowApplication.attendee_id == Attendee.id)
-                                                        ).outerjoin(ArtShowBidder).filter(
-                                                            or_(Attendee.art_show_bidder != None,  # noqa: E711
-                                                                Attendee.art_show_purchases != None,  # noqa: E711
-                                                                Attendee.art_show_applications != None,  # noqa: E711
-                                                                Attendee.art_agent_apps != None)  # noqa: E711
-                                                        ).outerjoin(ArtShowAgentCode).filter(
-                                                            ArtShowAgentCode.attendee_id == Attendee.id,
-                                                            ArtShowAgentCode.cancelled == None  # noqa: E711
-                                                        )
-            return_dict['marketplace_admin'] = self.query(Attendee).join(ArtistMarketplaceApplication)
+                            ~GuestGroup.group_type.in_([c.BAND])))
+            
             return_dict['hotel_lottery_admin'] = self.query(Attendee).join(LotteryApplication)
             return return_dict
 
@@ -1083,7 +1024,6 @@ class Session(SessionManager):
                     c.REFUNDED_STATUS: 2,
                     c.DEFERRED_STATUS: 3,
                     c.WATCHED_STATUS: 4,
-                    c.UNAPPROVED_DEALER_STATUS: 5,
                     c.NOT_ATTENDING: 6})
 
                 attendees = sorted(
@@ -1142,8 +1082,6 @@ class Session(SessionManager):
             new_account = AdminAccount(
                 attendee=attendee,
                 hashed=create_new_hash(password))
-            if 'judge' in params:
-                new_account.judge = params.pop('judge')
             new_account.apply(params)
             self.add(new_account)
             return new_account, password
@@ -1318,9 +1256,6 @@ class Session(SessionManager):
 
             return attendee, ''
 
-        def lookup_agent_code(self, code):
-            return self.query(ArtShowApplication).filter_by(agent_code=code).all()
-
         def add_promo_code_to_attendee(self, attendee, code, used_codes=defaultdict(int)):
             """
             Convenience method for adding a promo code to an attendee.
@@ -1436,97 +1371,6 @@ class Session(SessionManager):
                 code = codes.pop()
                 self.delete(code)
                 pc_group.promo_codes.remove(code)
-
-        def add_to_print_queue(self, attendee, printer_id, reg_station, print_fee=None, dry_run=False):
-            from uber.models import PrintJob
-            fields = [
-                    'badge_printed_name',
-                    'badge_num',
-                    'badge_type_label',
-                    'ribbon_labels',
-                    ]
-
-            errors = []
-            if not printer_id:
-                errors.append("Printer ID not set.")
-
-            if not reg_station:
-                errors.append("Reg station number not set.")
-
-            if print_fee is None and attendee.times_printed > 0:
-                errors.append("Please specify what reprint fee to charge this attendee, including $0.")
-
-            if not attendee.birthdate:
-                errors.append("Attendee is missing a date of birth.")
-            elif not attendee.age_now_or_at_con:
-                errors.append("Attendee's date of birth is not recognized as a date.")
-
-            attendee_fields = attendee.to_dict(fields)
-
-            for field in fields:
-                if not attendee_fields.get(field) and field != 'ribbon_labels':
-                    errors.append("Field missing: {}.".format(field))
-
-            if self.query(PrintJob).filter_by(attendee_id=attendee.id, printed=None, errors="").first():
-                errors.append("Badge is already queued to print.")
-
-            if errors:
-                return None, errors
-
-            if dry_run:
-                return "None", None
-
-            print_job = PrintJob(attendee_id=attendee.id,
-                                 admin_id=self.current_admin_account().id,
-                                 admin_name=self.admin_attendee().full_name,
-                                 printer_id=printer_id,
-                                 reg_station=reg_station,
-                                 print_fee=print_fee,
-                                 ready=False if print_fee else True)
-
-            if attendee.age_now_or_at_con >= 18:
-                print_job.is_minor = False
-            else:
-                print_job.is_minor = True
-
-            json_data = attendee_fields
-            del json_data['_model']
-            json_data['attendee_id'] = json_data.pop('id')
-            print_job.json_data = json_data
-
-            self.add(print_job)
-            self.commit()
-
-            return print_job.id, None
-
-        def update_badge_print_job(self, id):
-            job = self.print_job(id)
-            attendee = job.attendee
-
-            errors = []
-
-            if attendee.age_group_conf['val'] == c.AGE_UNKNOWN:
-                errors.append("Attendee no longer has an age group.")
-            else:
-                if attendee.age_now_or_at_con < 18 and not job.is_minor:
-                    errors.append("Attendee is now under 18, please requeue badge.")
-                if attendee.age_now_or_at_con >= 18 and job.is_minor:
-                    errors.append("Attendee is no longer under 18, please requeue badge.")
-
-            fields = ['badge_num', 'badge_type_label', 'ribbon_labels', 'badge_printed_name']
-            attendee_fields = attendee.to_dict(fields)
-
-            for field in fields:
-                if not attendee_fields.get(field) and field != 'ribbon_labels':
-                    errors.append("Field missing: {}.".format(field))
-                elif attendee_fields.get(field) != job.json_data.get(field):
-                    job.json_data[field] = attendee_fields.get(field)
-
-            if not errors:
-                self.add(job)
-                self.commit()
-
-            return errors
 
         def get_next_badge_num(self, badge_type):
             """
@@ -1740,11 +1584,6 @@ class Session(SessionManager):
 
         def staffers(self, pending=False):
             return self.all_attendees(only_staffing=True, pending=pending)
-
-        def all_panelists(self):
-            return self.query(Attendee).filter(or_(
-                Attendee.ribbon.contains(c.PANELIST_RIBBON),
-                Attendee.badge_type == c.GUEST_BADGE)).order_by(Attendee.full_name).all()
 
         @department_id_adapter
         def jobs(self, department_id=None):
@@ -2178,121 +2017,6 @@ class Session(SessionManager):
                         # Ignore db integrity errors
                         self.rollback()
                 return inserted_models
-
-        # ========================
-        # mivs
-        # ========================
-
-        def logged_in_studio(self):
-            try:
-                return self.indie_studio(cherrypy.session.get('studio_id'))
-            except Exception:
-                raise HTTPRedirect('../mivs/login_explanation')
-
-        def logged_in_judge(self):
-            judge = self.admin_attendee().admin_account.judge
-            if judge:
-                return judge
-            else:
-                raise HTTPRedirect(
-                    '../accounts/homepage?message={}',
-                    'You have been given judge access but not had a judge entry created for you - '
-                    'please contact a MIVS admin to correct this.')
-
-        def code_for(self, game):
-            if game.unlimited_code:
-                return game.unlimited_code
-            else:
-                for code in self.logged_in_judge().codes:
-                    if code.game == game:
-                        return code
-
-        def delete_screenshot(self, screenshot):
-            self.delete(screenshot)
-            try:
-                os.remove(screenshot.filepath)
-            except Exception:
-                pass
-            self.commit()
-
-        def indie_judges(self):
-            return self.query(IndieJudge).join(IndieJudge.admin_account).join(AdminAccount.attendee) \
-                .order_by(Attendee.full_name)
-
-        def indie_games(self):
-            return self.query(IndieGame).join(IndieStudio).options(
-                joinedload(IndieGame.studio), joinedload(IndieGame.reviews)).order_by(IndieStudio.name, IndieGame.title)
-
-        # =========================
-        # mits
-        # =========================
-
-        def log_in_as_mits_team(
-                self, team_id, redirect_to='../mits/index'):
-            try:
-                team = self.mits_team(team_id)
-                duplicate_teams = []
-                while team.duplicate_of:
-                    duplicate_teams.append(team.id)
-                    team = self.mits_team(team.duplicate_of)
-                    assert team.id not in duplicate_teams, 'circular reference in duplicate_of: {}'.format(
-                        duplicate_teams)
-            except Exception:
-                log.error('attempt to log into invalid team {}', team_id, exc_info=True)
-                raise HTTPRedirect('../mits/login_explanation')
-            else:
-                cherrypy.session['mits_team_id'] = team.id
-                raise HTTPRedirect(redirect_to)
-
-        def logged_in_mits_team(self):
-            try:
-                team = self.mits_team(cherrypy.session.get('mits_team_id'))
-                assert not team.deleted or team.duplicate_of
-            except Exception:
-                raise HTTPRedirect('../mits/login_explanation')
-            else:
-                if team.duplicate_of:
-                    # The currently-logged-in team was deleted, so log
-                    # back in as the correct team.
-                    self.log_as_as_mits_team(team.id)
-                else:
-                    return team
-
-        def mits_teams(self, include_deleted=False):
-            if include_deleted:
-                deleted_filter = []
-            else:
-                deleted_filter = [MITSTeam.deleted == False]  # noqa: E712
-            return self.query(MITSTeam).filter(*deleted_filter).options(
-                joinedload(MITSTeam.applicants).subqueryload(MITSApplicant.attendee),
-                joinedload(MITSTeam.games),
-                joinedload(MITSTeam.schedule),
-            ).order_by(MITSTeam.name)
-
-        def delete_mits_file(self, model):
-            try:
-                os.remove(model.filepath)
-            except Exception:
-                log.error('Unexpected error deleting MITS file {}', model.filepath)
-
-            # Regardless of whether removing the file from the
-            # filesystem succeeded, we still want the delete it from the
-            # database. The most likely cause of failure is if the file
-            # was already deleted or is otherwise not present, so it
-            # wouldn't make sense to keep the database record around.
-            self.delete(model)
-            self.commit()
-
-        # =========================
-        # panels
-        # =========================
-
-        def panel_apps(self):
-            return self.query(PanelApplication).order_by('applied').all()
-
-        def panel_applicants(self):
-            return self.query(PanelApplicant).options(joinedload(PanelApplicant.application)) \
-                .order_by('first_name', 'last_name')
 
     @classmethod
     def model_mixin(cls, model):

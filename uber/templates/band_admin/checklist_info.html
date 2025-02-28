@@ -8,17 +8,6 @@
   {{ csrf_token() }}
   <input type="hidden" name="id" value="{{ guest.id }}" />
 
-  {{ macros.form_group(guest.panel, 'name', label='Panel Name', is_readonly=True) }}
-  {{ macros.form_group(guest.panel, 'length', label='Panel Length', is_readonly=True) }}
-  {{ macros.form_group(guest.panel, 'desc', label='Panel Description', is_readonly=True) }}
-
-  {% if guest.panel.tech_needs or guest.panel.other_tech_needs %}
-    {{ macros.form_checkgroup(guest.panel, 'tech_needs',
-          other_field='other_tech_needs',
-          label='Panel Tech Needs',
-          is_readonly=True) }}
-  {% endif %}
-
   {{ macros.form_group(guest.bio, 'desc', label='Bio', is_readonly=True) }}
   {{ macros.form_group(guest.bio, 'pic_url',
         url_text="Click here to view the band's uploaded picture",

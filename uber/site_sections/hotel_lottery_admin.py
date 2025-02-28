@@ -177,14 +177,6 @@ class Root:
         }
 
     @csv_file
-    def accepted_dealers(self, out, session):
-        out.writerow(['Group Name', 'Group ID', 'Reg ID'])
-
-        for dealer in session.query(Attendee).join(Group, Attendee.group_id == Group.id).filter(
-            Group.is_dealer, Group.status.in_(c.DEALER_ACCEPTED_STATUSES)):
-            out.writerow([dealer.group.name, dealer.group.id, dealer.id])
-
-    @csv_file
     def interchange_export(self, out, session, staff_lottery=False):
         def print_dt(dt):
             if not dt:
@@ -248,8 +240,6 @@ class Root:
 
             # Config data and IDs
             dealer_id = ''
-            if app.attendee.is_dealer and app.attendee.group and app.attendee.group.status in c.DEALER_ACCEPTED_STATUSES:
-                dealer_id = app.attendee.group.id
             row.extend([datetime_local_filter(app.current_lottery_deadline), datetime_local_filter(c.HOTEL_LOTTERY_SUITE_CUTOFF),
                         c.EVENT_YEAR, app.response_id, app.confirmation_num, app.id, "RAMS_1", app.id, dealer_id])
 

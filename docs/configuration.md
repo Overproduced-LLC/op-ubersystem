@@ -49,7 +49,7 @@ To run `make_config.py` and other Python scripts, you'll need to download and in
 For example, MAGFest's config repo URL is `https://github.com/magfest/terraform-aws-magfest.git`. You will want to use two folders when downloading MAGFest config: the "dev" environment folder, and a folder corresponding to the event and year you need to download. The following example will download and compile config for MAGFest Super 2024:
 
 ```bash
-python3 make_config.py --repo https://github.com/magfest/terraform-aws-magfest.git --paths uber_config/environments/dev uber_config/events/super/2024
+python3 make_config.py --repo https://github.com/overproduced-llc/op-ubersystem-terraform.git --paths uber_config/environments/dev uber_config/events/zelda/2025
 ```
 
 These folders are based on the specific folder structure in MAGFest's config repo [explained here](https://github.com/magfest/terraform-aws-magfest/blob/main/uber_config/README.md). Other event's config may be organized differently.

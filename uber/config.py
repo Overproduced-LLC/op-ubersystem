@@ -134,11 +134,6 @@ def request_cached_property(func):
 def create_namespace_uuid(s):
     return uuid.UUID(hashlib.sha1(s.encode('utf-8')).hexdigest()[:32])
 
-
-def really_past_mivs_deadline(deadline):
-    return uber.utils.localized_now() > (deadline + timedelta(minutes=c.MIVS_SUBMISSION_GRACE_PERIOD))
-
-
 class _Overridable:
     "Base class we extend below to allow plugins to add/override config options."
     @classmethod
@@ -341,8 +336,8 @@ class Config(_Overridable):
         if section_and_page in access or section in access:
             return True
 
-        if section == 'group_admin' and any(x in access for x in ['dealer_admin', 'guest_admin',
-                                                                  'band_admin', 'mivs_admin']):
+        if section == 'group_admin' and any(x in access for x in ['guest_admin',
+                                                                  'band_admin']):
             return True
         
     def update_name_problems(self):
@@ -370,23 +365,6 @@ class Config(_Overridable):
         return opts
 
     @property
-    def DEALER_REG_OPEN(self):
-        return self.AFTER_DEALER_REG_START and self.BEFORE_DEALER_REG_SHUTDOWN
-
-    @property
-    @dynamic
-    def DEALER_REG_SOFT_CLOSED(self):
-        return self.AFTER_DEALER_REG_DEADLINE or self.DEALER_APPS >= self.MAX_DEALER_APPS \
-            if self.MAX_DEALER_APPS else self.AFTER_DEALER_REG_DEADLINE
-    
-    @property
-    def DEALER_INDEFINITE_TERM(self):
-        if c.DEALER_TERM.startswith(("a", "e", "i", "o", "u")):
-            return "an " + c.DEALER_TERM
-        else:
-            return "a " + c.DEALER_TERM
-
-    @property
     def TABLE_OPTS(self):
         return [(x, str(x)) for x in list(range(1, c.MAX_TABLES + 1))]
 
@@ -400,18 +378,6 @@ class Config(_Overridable):
                 for count, desc in c.TABLE_OPTS]
 
     @property
-    def ART_SHOW_OPEN(self):
-        return self.AFTER_ART_SHOW_REG_START and self.BEFORE_ART_SHOW_DEADLINE
-    
-    @property
-    def ART_SHOW_HAS_FEES(self):
-        return c.COST_PER_PANEL or c.COST_PER_TABLE or c.ART_MAILING_FEE
-    
-    @property
-    def MARKETPLACE_CANCEL_DEADLINE(self):
-        return min(self.EPOCH, self.PREREG_TAKEDOWN) if self.PREREG_TAKEDOWN else self.EPOCH
-
-    @property
     def SELF_SERVICE_REFUNDS_OPEN(self):
         return self.BEFORE_REFUND_CUTOFF and (self.AFTER_REFUND_START or not self.REFUND_START)
     
@@ -422,16 +388,6 @@ class Config(_Overridable):
     @property
     def STAFF_HOTEL_LOTTERY_OPEN(self):
         return c.AFTER_HOTEL_LOTTERY_STAFF_START and c.BEFORE_HOTEL_LOTTERY_STAFF_DEADLINE
-
-    @request_cached_property
-    @dynamic
-    def DEALER_APPS(self):
-        from uber.models import Session, Group
-        with Session() as session:
-            return session.query(Group).filter(
-                Group.tables > 0,
-                Group.cost > 0,
-                Group.status == self.UNAPPROVED).count()
 
     @request_cached_property
     @dynamic
@@ -515,7 +471,7 @@ class Config(_Overridable):
 
     @property
     def PREREG_BADGE_TYPES(self):
-        types = [self.ATTENDEE_BADGE, self.PSEUDO_DEALER_BADGE]
+        types = [self.ATTENDEE_BADGE]
         if c.UNDER_13 in c.AGE_GROUP_CONFIGS and c.AGE_GROUP_CONFIGS[c.UNDER_13]['can_register']:
             types.append(self.CHILD_BADGE)
         for reg_open, badge_type in [(self.BEFORE_GROUP_PREREG_TAKEDOWN, self.PSEUDO_GROUP_BADGE)]:
@@ -1159,35 +1115,6 @@ class Config(_Overridable):
                         })
         return public_site_sections, public_pages, pages
 
-    # =========================
-    # mivs
-    # =========================
-
-    @property
-    @dynamic
-    def CAN_SUBMIT_MIVS(self):
-        return self.MIVS_SUBMISSIONS_OPEN or self.HAS_MIVS_ADMIN_ACCESS
-
-    @property
-    @dynamic
-    def MIVS_SUBMISSIONS_OPEN(self):
-        return not really_past_mivs_deadline(c.MIVS_DEADLINE) and self.AFTER_MIVS_START
-
-    # =========================
-    # panels
-    # =========================
-
-    @request_cached_property
-    @dynamic
-    def PANEL_POC_OPTS(self):
-        from uber.models import Session, AdminAccount
-        with Session() as session:
-            return sorted([
-                (a.attendee.id, a.attendee.full_name)
-                for a in session.query(AdminAccount).options(joinedload(AdminAccount.attendee))
-                if 'panels_admin' in a.read_or_write_access_set
-            ], key=lambda tup: tup[1], reverse=False)
-
     def __getattr__(self, name):
         if name.split('_')[0] in ['BEFORE', 'AFTER']:
             date_setting = getattr(c, name.split('_', 1)[1])
@@ -1545,12 +1472,6 @@ c.SHIFTLESS_DEPTS = {getattr(c, dept.upper()) for dept in c.SHIFTLESS_DEPTS}
 c.PREASSIGNED_BADGE_TYPES = [getattr(c, badge_type.upper()) for badge_type in c.PREASSIGNED_BADGE_TYPES]
 c.TRANSFERABLE_BADGE_TYPES = [getattr(c, badge_type.upper()) for badge_type in c.TRANSFERABLE_BADGE_TYPES]
 
-c.MIVS_CHECKLIST = _config['mivs_checklist']
-for key, val in c.MIVS_CHECKLIST.items():
-    val['deadline'] = c.EVENT_TIMEZONE.localize(datetime.strptime(val['deadline'] + ' 23:59', '%Y-%m-%d %H:%M'))
-    if val['start']:
-        val['start'] = c.EVENT_TIMEZONE.localize(datetime.strptime(val['start'] + ' 23:59', '%Y-%m-%d %H:%M'))
-
 c.DEPT_HEAD_CHECKLIST = {key: val for key, val in _config['dept_head_checklist'].items() if val['deadline']}
 
 c.CON_LENGTH = int((c.ESCHATON - c.EPOCH).total_seconds() // 3600)
@@ -1560,7 +1481,6 @@ c.START_TIME_OPTS = [
 c.SETUP_JOB_START = c.EPOCH - timedelta(days=c.SETUP_SHIFT_DAYS)
 c.TEARDOWN_JOB_END = c.ESCHATON + timedelta(days=1, hours=23)  # Allow two full days for teardown shifts
 c.CON_TOTAL_DAYS = -(-(int((c.TEARDOWN_JOB_END - c.SETUP_JOB_START).total_seconds() // 3600)) // 24)
-c.PANEL_STRICT_LENGTH_OPTS = [opt for opt in c.PANEL_LENGTH_OPTS if opt != c.OTHER]
 
 c.EVENT_YEAR = c.EPOCH.strftime('%Y')
 c.EVENT_NAME_AND_YEAR = c.EVENT_NAME + (' {}'.format(c.EVENT_YEAR) if c.EVENT_YEAR else '')
@@ -1691,36 +1611,6 @@ c.JAVASCRIPT_INCLUDES = []
 # relative URL of the resource (e.g., theme/prereg.css) and the value is the hash for that resource
 c.STATIC_HASH_LIST = {}
 
-if not c.ALLOW_SHARED_TABLES:
-    c.DEALER_STATUS_OPTS = [(key, val) for key, val in c.DEALER_STATUS_OPTS if key != c.SHARED]
-dealer_status_label_lookup = {val: key for key, val in c.DEALER_STATUS_OPTS}
-c.DEALER_EDITABLE_STATUSES = [dealer_status_label_lookup[name] for name in c.DEALER_EDITABLE_STATUS_LIST]
-c.DEALER_CANCELLABLE_STATUSES = [dealer_status_label_lookup[name] for name in c.DEALER_CANCELLABLE_STATUS_LIST]
-c.DEALER_ACCEPTED_STATUSES = [c.APPROVED, c.SHARED] if c.ALLOW_SHARED_TABLES else [c.APPROVED]
-
-
-# A list of models that have properties defined for exporting for Guidebook
-c.GUIDEBOOK_MODELS = [
-    ('GuestGroup_guest', 'Guest'),
-    ('GuestGroup_band', 'Band'),
-    ('MITSGame', 'MITS'),
-    ('IndieGame', 'MIVS'),
-    ('Group_dealer', 'Marketplace'),
-]
-
-
-# A list of properties that we will check for when export for Guidebook
-# and the column headings Guidebook expects for them
-c.GUIDEBOOK_PROPERTIES = [
-    ('guidebook_name', 'Name'),
-    ('guidebook_subtitle', 'Sub-Title (i.e. Location, Table/Booth, or Title/Sponsorship Level)'),
-    ('guidebook_desc', 'Description (Optional)'),
-    ('guidebook_location', 'Location/Room'),
-    ('guidebook_header', 'Image (Optional)'),
-    ('guidebook_thumbnail', 'Thumbnail (Optional)'),
-]
-
-
 # =============================
 # hotel
 # =============================
@@ -1747,120 +1637,6 @@ c.TEARDOWN_NIGHTS = c.NIGHT_DISPLAY_ORDER[1 + c.NIGHT_DISPLAY_ORDER.index(c.CORE
 for _attr in ['CORE_NIGHT', 'SETUP_NIGHT', 'TEARDOWN_NIGHT']:
     setattr(c, _attr + '_NAMES', [c.NIGHTS[night] for night in getattr(c, _attr + 'S')])
 
-
-# =============================
-# attendee_tournaments
-#
-# NO LONGER USED.
-#
-# The attendee_tournaments module is no longer used, but has been
-# included for backward compatibility with legacy servers.
-# =============================
-
-c.TOURNAMENT_AVAILABILITY_OPTS = []
-_val = 0
-for _day in range((c.ESCHATON - c.EPOCH).days):
-    for _when in ['Morning (8am-12pm)', 'Afternoon (12pm-6pm)', 'Evening (6pm-10pm)', 'Night (10pm-2am)']:
-        c.TOURNAMENT_AVAILABILITY_OPTS.append([
-            _val,
-            _when + ' of ' + (c.EPOCH + timedelta(days=_day)).strftime('%A %B %d')
-        ])
-        _val += 1
-c.TOURNAMENT_AVAILABILITY_OPTS.append([_val, 'Morning (8am-12pm) of ' + c.ESCHATON.strftime('%A %B %d')])
-
-
-# =============================
-# mivs
-# =============================
-
-c.MIVS_CODES_REQUIRING_INSTRUCTIONS = [
-    getattr(c, code_type.upper()) for code_type in c.MIVS_CODES_REQUIRING_INSTRUCTIONS]
-
-# c.MIVS_INDIE_JUDGE_GENRE* should be the same as c.MIVS_INDIE_GENRE* but with a c.MIVS_ALL_GENRES option
-_mivs_all_genres_desc = 'All genres'
-c.create_enum_val('mivs_all_genres')
-c.make_enum('mivs_indie_judge_genre', _config['enums']['mivs_indie_genre'])
-c.MIVS_INDIE_JUDGE_GENRES[c.MIVS_ALL_GENRES] = _mivs_all_genres_desc
-c.MIVS_INDIE_JUDGE_GENRE_OPTS.insert(0, (c.MIVS_ALL_GENRES, _mivs_all_genres_desc))
-
-c.MIVS_PROBLEM_STATUSES = {getattr(c, status.upper()) for status in c.MIVS_PROBLEM_STATUSES.split(',')}
-
-c.FINAL_MIVS_GAME_STATUSES = [c.ACCEPTED, c.WAITLISTED, c.DECLINED, c.CANCELLED]
-
-# used for computing the difference between the "drop-dead deadline" and the "soft deadline"
-c.SOFT_MIVS_JUDGING_DEADLINE = c.MIVS_JUDGING_DEADLINE - timedelta(days=7)
-
-# Automatically generates all the previous MIVS years based on the eschaton and c.MIVS_START_YEAR
-c.PREV_MIVS_YEAR_OPTS, c.PREV_MIVS_YEARS = [], {}
-for num in range(c.ESCHATON.year - c.MIVS_START_YEAR):
-    val = c.MIVS_START_YEAR + num
-    desc = c.EVENT_NAME + ' MIVS ' + str(val)
-    c.PREV_MIVS_YEAR_OPTS.append((val, desc))
-    c.PREV_MIVS_YEARS[val] = desc
-
-
-# =============================
-# mits
-# =============================
-
-# The number of steps to the MITS application process.  Since changing this requires a code change
-# anyway (in order to add another step), this is hard-coded here rather than being a config option.
-c.MITS_APPLICATION_STEPS = 4
-
-c.MITS_DESC_BY_AGE = {age: c.MITS_AGE_DESCRIPTIONS[age] for age in c.MITS_AGES}
-
-# =============================
-# panels
-# =============================
-
-c.PANEL_SCHEDULE_LENGTH = int((c.PANELS_ESCHATON - c.PANELS_EPOCH).total_seconds() // 3600) * 2
-c.EVENT_START_TIME_OPTS = [(dt, dt.strftime('%I %p %a') if not dt.minute else dt.strftime('%I:%M %a'))
-                           for dt in [c.EPOCH + timedelta(minutes=i * 30) for i in range(c.PANEL_SCHEDULE_LENGTH)]]
-c.EVENT_DURATION_OPTS = [(i, '%.1f hour%s' % (i/2, 's' if i != 2 else '')) for i in range(1, 19)]
-
-c.ORDERED_EVENT_LOCS = [loc for loc, desc in c.EVENT_LOCATION_OPTS]
-c.EVENT_BOOKED = {'colspan': 0}
-c.EVENT_OPEN = {'colspan': 1}
-
-c.PRESENTATION_OPTS.sort(key=lambda tup: 'zzz' if tup[0] == c.OTHER else tup[1])
-
-
-def _make_room_trie(rooms):
-    root = nesteddefaultdict()
-    for index, (location, description) in enumerate(rooms):
-        for word in filter(lambda s: s, re.split(r'\W+', description)):
-            current_dict = root
-            current_dict['__rooms__'][location] = index
-            for letter in word:
-                current_dict = current_dict.setdefault(letter.lower(), nesteddefaultdict())
-                current_dict['__rooms__'][location] = index
-    return root
-
-
-c.ROOM_TRIE = _make_room_trie(c.EVENT_LOCATION_OPTS)
-
-invalid_rooms = [room for room in (c.PANEL_ROOMS + c.MUSIC_ROOMS) if not getattr(c, room.upper(), None)]
-
-for room in invalid_rooms:
-    log.warning('config: panels_room config problem: '
-                'Ignoring {!r} because it was not also found in [[event_location]] section.'.format(room.upper()))
-
-c.PANEL_ROOMS = [getattr(c, room.upper()) for room in c.PANEL_ROOMS if room not in invalid_rooms]
-c.MUSIC_ROOMS = [getattr(c, room.upper()) for room in c.MUSIC_ROOMS if room not in invalid_rooms]
-
-
-# =============================
-# tabletop
-# =============================
-
-invalid_tabletop_rooms = [room for room in c.TABLETOP_LOCATIONS if not getattr(c, room.upper(), None)]
-for room in invalid_tabletop_rooms:
-    log.warning('config: tabletop_locations config problem: '
-                'Ignoring {!r} because it was not also found in [[event_location]] section.'.format(room.upper()))
-
-c.TABLETOP_LOCATIONS = [getattr(c, room.upper()) for room in c.TABLETOP_LOCATIONS if room not in invalid_tabletop_rooms]
-
-
 # =============================
 # guests
 # =============================
@@ -1871,7 +1647,6 @@ c.ROCK_ISLAND_GROUPS = [getattr(c, group.upper()) for group in c.ROCK_ISLAND_GRO
 c.GUEST_CHECKLIST_ITEMS = [
     {'name': 'bio', 'header': 'Announcement Info Provided'},
     {'name': 'performer_badges', 'header': 'Performer Badges'},
-    {'name': 'panel', 'header': 'Panel'},
     {'name': 'autograph'},
     {'name': 'info', 'header': 'Agreement Completed'},
     {'name': 'merch', 'header': 'Merch'},

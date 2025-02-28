@@ -13,7 +13,7 @@ from uber.custom_tags import format_currency
 from uber.decorators import ajax, any_admin_access, all_renderable, csrf_protected, log_pageview
 from uber.errors import HTTPRedirect
 from uber.forms import load_forms
-from uber.models import AdminAccount, Attendee, Email, Event, Group, GuestGroup, PageViewTracking, Tracking
+from uber.models import AdminAccount, Attendee, Email, Group, GuestGroup, PageViewTracking, Tracking
 from uber.utils import check, validate_model, add_opt, SignNowRequest
 from uber.payments import ReceiptManager
 
@@ -31,25 +31,9 @@ class Root:
 
     def index(self, session, message='', show_all=None):
         groups = session.viewable_groups().options(joinedload(Group.attendees))
-        dealer_counts = defaultdict(int)
 
         if not show_all:
             groups = groups.filter(Group.status != c.IMPORTED)
-
-        dealer_groups = groups.filter(Group.is_dealer == True)  # noqa: E712
-        dealer_counts['total'] = dealer_groups.count()
-        for group in dealer_groups:
-            dealer_counts['tables'] += group.tables
-            dealer_counts['badges'] += group.badges
-            match group.status:
-                case c.UNAPPROVED:
-                    dealer_counts['unapproved'] += group.tables
-                case c.WAITLISTED:
-                    dealer_counts['waitlisted'] += group.tables
-                case c.APPROVED:
-                    dealer_counts['approved'] += group.tables
-                case c.SHARED:
-                    dealer_counts['approved'] += group.tables
 
         guest_groups = groups.filter(Group.guest != None)
 
@@ -58,15 +42,8 @@ class Root:
             'show_all': show_all,
             'all_groups': groups,
             'guest_groups': guest_groups,
-            'dealer_groups': dealer_groups.options(joinedload(Group.active_receipt)),
             'guest_checklist_items': GuestGroup(group_type=c.GUEST).sorted_checklist_items,
             'band_checklist_items': GuestGroup(group_type=c.BAND).sorted_checklist_items,
-            'num_dealer_groups': dealer_counts['total'],
-            'dealer_badges': dealer_counts['badges'],
-            'tables': dealer_counts['tables'],
-            'unapproved_tables': dealer_counts['unapproved'],
-            'waitlisted_tables': dealer_counts['waitlisted'],
-            'approved_tables': dealer_counts['approved'],
         }
 
     def new_group_from_attendee(self, session, id):
@@ -97,12 +74,9 @@ class Root:
                 receipt_items = ReceiptManager.auto_update_receipt(group, session.get_receipt_by_model(group), params.copy())
                 session.add_all(receipt_items)
         else:
-            group = Group(is_dealer=True, tables=1) if new_dealer else Group()
+            group = Group()
 
-        if group.is_dealer:
-            form_list = ['AdminTableInfo', 'ContactInfo']
-        else:
-            form_list = ['AdminGroupInfo']
+        form_list = ['AdminGroupInfo']
 
         if group.is_new:
             form_list.append('LeaderInfo')
@@ -202,22 +176,6 @@ class Root:
                     group.guest = group.guest or GuestGroup()
                     group.guest.group_type = group.guest_group_type
 
-                if group.is_new and group.is_dealer:
-                    if group.status in c.DEALER_ACCEPTED_STATUSES and group.amount_unpaid:
-                        raise HTTPRedirect('../preregistration/group_members?id={}', group.id)
-                    elif group.status == c.APPROVED:
-                        raise HTTPRedirect(
-                            'index?message={}', group.name + ' has been uploaded and approved')
-                    else:
-                        raise HTTPRedirect(
-                            'index?message={}', group.name + ' is uploaded as ' + group.status_label)
-                elif group.is_dealer:
-                    if group.status in c.DEALER_ACCEPTED_STATUSES and group.orig_value_of('status') not in [c.APPROVED,
-                                                                                                        c.SHARED]:
-                        for attendee in group.attendees:
-                            attendee.ribbon = add_opt(attendee.ribbon_ints, c.DEALER_RIBBON)
-                            session.add(attendee)
-
                 raise HTTPRedirect('form?id={}&message={}', group.id, message or (group.name + " has been saved"))
 
         receipt = session.get_receipt_by_model(group) if not group.is_new else None
@@ -229,7 +187,7 @@ class Root:
             'forms': forms,
             'signnow_last_emailed': signnow_last_emailed,
             'signnow_signed': signnow_signed,
-            'new_dealer': new_dealer,
+            'new_dealer': False,
             'payment_enabled': True if reg_station_id else False,
         }
 
@@ -242,10 +200,7 @@ class Root:
             group = session.group(params.get('id'))
 
         if not form_list:
-            if group.is_dealer or new_dealer:
-                form_list = ['AdminTableInfo', 'ContactInfo']
-            else:
-                form_list = ['AdminGroupInfo']
+            form_list = ['AdminGroupInfo']
 
             if group.is_new:
                 form_list.append('LeaderInfo')

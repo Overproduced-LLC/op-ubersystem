@@ -360,7 +360,7 @@ def form_link(model, new_window=False, prepend=''):
     if not model:
         return ''
 
-    from uber.models import Attendee, AttendeeAccount, Attraction, Department, Group, Job, PanelApplication, LotteryApplication
+    from uber.models import Attendee, AttendeeAccount, Department, Group, Job, LotteryApplication
 
     page = 'form'
 
@@ -376,11 +376,9 @@ def form_link(model, new_window=False, prepend=''):
     site_sections = {
         Attendee: attendee_section,
         AttendeeAccount: '../reg_admin/',
-        Attraction: '../attractions_admin/',
         Department: '../dept_admin/',
         Group: '../group_admin/',
         Job: '../jobs/',
-        PanelApplication: '../panels_admin/',
         LotteryApplication: '../hotel_lottery_admin/'}
 
     cls = model.__class__
@@ -459,7 +457,7 @@ def maybe_red(amount, comp):
 
 @JinjaEnv.jinja_filter
 def maybe_last_year(day):
-    return 'last year' if day <= min(c.PREREG_OPEN, c.DEALER_REG_START) else day
+    return 'last year' if day <= c.PREREG_OPEN else day
 
 
 @JinjaEnv.jinja_filter

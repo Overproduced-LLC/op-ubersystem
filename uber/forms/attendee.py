@@ -121,7 +121,7 @@ class PersonalInfo(AddressForm, MagForm):
             optional_list.append('legal_name')
         if self.copy_email.data:
             optional_list.append('email')
-        if self.copy_phone.data or self.no_cellphone.data or not attendee.is_dealer:
+        if self.copy_phone.data or self.no_cellphone.data:
             optional_list.append('cellphone')
         if self.copy_address.data:
             optional_list.extend(['address1', 'city', 'region', 'region_us', 'region_canada', 'zip_code', 'country'])
@@ -191,11 +191,11 @@ class BadgeExtras(MagForm):
     dynamic_choices_fields = {'shirt': lambda: c.SHIRT_OPTS, 'staff_shirt': lambda: c.STAFF_SHIRT_OPTS}
 
     badge_type = HiddenIntField('Badge Type')
-    amount_extra = HiddenIntField('Pre-order Merch', validators=[
+    amount_extra = HiddenIntField('Lodging', validators=[
         validators.NumberRange(min=0, message="Amount extra must be a number that is 0 or higher.")
         ])
-    extra_donation = IntegerField('Extra Donation', validators=[
-        validators.NumberRange(min=0, message="Extra donation must be a number that is 0 or higher.")
+    extra_donation = IntegerField('Extra Payment', validators=[
+        validators.NumberRange(min=0, message="Extra payment must be a number that is 0 or higher.")
         ], widget=NumberInputGroup(), description=popup_link("../static_views/givingExtra.html", "Learn more"))
     shirt = SelectAvailableField('Shirt Size', coerce=int,
                                  sold_out_list_func=lambda: list(
@@ -318,7 +318,7 @@ class StaffingInfo(MagForm):
     dynamic_choices_fields = {'requested_depts_ids': lambda: [(v[0], v[1]) for v in c.PUBLIC_DEPARTMENT_OPTS_WITH_DESC]}
 
     staffing = BooleanField('I am interested in volunteering!', widget=SwitchInput(),
-                            description=popup_link(c.VOLUNTEER_PERKS_URL, "What do I get for volunteering?"))
+                            description=popup_link(c.VOLUNTEER_PERKS_URL, ""))
     requested_depts_ids = SelectMultipleField('Where do you want to help?',
                                               widget=MultiCheckbox())  # TODO: Show attendees department descriptions
 
@@ -359,7 +359,7 @@ class PreregOtherInfo(OtherInfo, StaffingInfo):
     dynamic_choices_fields = {'requested_depts_ids': lambda: [(v[0], v[1]) for v in c.PUBLIC_DEPARTMENT_OPTS_WITH_DESC]}
 
     staffing = BooleanField('I am interested in volunteering!', widget=SwitchInput(),
-                            description=popup_link(c.VOLUNTEER_PERKS_URL, "What do I get for volunteering?"))
+                            description=popup_link(c.VOLUNTEER_PERKS_URL, ""))
     requested_depts_ids = SelectMultipleField('Where do you want to help?',
                                               widget=MultiCheckbox())  # TODO: Show attendees department descriptions
     cellphone = TelField('Phone Number', description="A cellphone number is required for volunteers.", validators=[
@@ -417,7 +417,6 @@ class Consents(MagForm):
 
 
 class AdminConsents(Consents):
-    attractions_opt_out = HiddenBoolField('Attractions Signups Locked')
     pii_consent = HiddenBoolField()
 
     def can_spam_label(self):
@@ -472,7 +471,7 @@ class AdminBadgeFlags(BadgeFlags):
     def get_valid_groups():
         from uber.models import Group
         with Session() as session:
-            groups_list = [(g.id, g.name + (f" ({g.status_label})" if g.is_dealer else ""))
+            groups_list = [(g.id, g.name)
                            for g in session.query(Group).filter(Group.status != c.IMPORTED).order_by(Group.name).all()]
             return [('', "No Group")] + groups_list
 

@@ -34,7 +34,7 @@ from pockets.autolog import log
 
 from uber.config import c
 from uber.decorators import receipt_calculation
-from uber.models import Attendee, ArtShowApplication, Group
+from uber.models import Attendee, Group
 
 
 def calc_simple_cost_change(model, col_name, col_str, new_model=None):
@@ -76,102 +76,6 @@ def calc_multiplied_cost_change(app, col_name, col_str, price_per, new_app=None)
 
     if diff:
         return (f"{label} {col_str}", price_per * 100 * cost_mod, col_name, abs(diff))
-
-
-@receipt_calculation.ArtistMarketplaceApplication
-def app_cost(app):
-    if app.status == c.APPROVED:
-        return ("Marketplace Application Fee", app.overridden_price * 100 or c.MARKETPLACE_FEE * 100 or 0, None)
-
-
-@receipt_calculation.ArtShowApplication
-def overridden_app_cost(app, new_app=None):
-    if not new_app and app.overridden_price is None:
-        return
-    elif not new_app:
-        return ("Art Show Application (Custom Fee)", app.overridden_price * 100, 'overridden_price')
-    
-    if app.overridden_price is None and new_app.overridden_price is None:
-        return
-    
-    if new_app.overridden_price is None:
-        new_cost = new_app.panels_and_tables_cost * 100
-    else:
-        new_cost = new_app.overridden_price * 100
-
-    if app.overridden_price is None:
-        diff = new_cost - (app.panels_and_tables_cost * 100)
-        label = "Set"
-    elif new_app.overridden_price is None:
-        diff = new_cost - app.overridden_price * 100
-        label = "Unset"
-    else:
-        diff = new_cost - app.overridden_price * 100
-        label = "Update"
-
-    if diff:
-        return (f"{label} Custom Fee", diff, 'overridden_price')
-
-
-@receipt_calculation.ArtShowApplication
-def panel_cost(app, new_app=None):
-    if app.overridden_price is not None or new_app and new_app.overridden_price is not None:
-        return
-    
-    return calc_multiplied_cost_change(app, 'panels', 'General Panels', c.COST_PER_PANEL, new_app)
-
-
-@receipt_calculation.ArtShowApplication
-def table_cost(app, new_app=None):
-    if app.overridden_price is not None or new_app and new_app.overridden_price is not None:
-        return
-    
-    return calc_multiplied_cost_change(app, 'tables', 'General Tables', c.COST_PER_TABLE, new_app)
-
-
-@receipt_calculation.ArtShowApplication
-def mature_panel_cost(app, new_app=None):
-    if app.overridden_price is not None or new_app and new_app.overridden_price is not None:
-        return
-    
-    return calc_multiplied_cost_change(app, 'panels_ad', 'Mature Panels', c.COST_PER_PANEL, new_app)
-
-
-@receipt_calculation.ArtShowApplication
-def mature_table_cost(app, new_app=None):
-    if app.overridden_price is not None or new_app and new_app.overridden_price is not None:
-        return
-    
-    return calc_multiplied_cost_change(app, 'tables_ad', 'Mature Tables', c.COST_PER_TABLE, new_app)
-
-
-@receipt_calculation.ArtShowApplication
-def mailing_fee_cost(app, new_app=None):
-    if not new_app and app.delivery_method != c.BY_MAIL:
-        return
-    elif not new_app:
-        return ("Mailing Fee", c.ART_MAILING_FEE * 100, 'delivery_method')
-
-    old_cost = c.ART_MAILING_FEE * 100 if app.delivery_method == c.BY_MAIL else 0
-    new_cost = c.ART_MAILING_FEE * 100 if new_app.delivery_method == c.BY_MAIL else 0
-    if old_cost == new_cost:
-        return
-
-    label = "Add" if not old_cost else "Remove"
-    return (f"{label} Mailing Fee", new_cost - old_cost, 'delivery_method')
-
-
-ArtShowApplication.receipt_changes = {
-    'overridden_price': (overridden_app_cost, c.SPACE),
-    'panels': (panel_cost, c.SPACE),
-    'panels_ad': (mature_panel_cost, c.SPACE),
-    'tables': (table_cost, c.SPACE),
-    'tables_ad': (mature_table_cost, c.SPACE),
-    'delivery_method': (mailing_fee_cost, c.MAIL_IN_FEE),
-}
-
-
-ArtShowApplication.department = c.ART_SHOW_RECEIPT_ITEM
 
 
 def skip_badge_cost_calc(attendee, new_receipt=False):
@@ -219,8 +123,6 @@ def base_badge_cost(attendee, new_attendee=None):
     if attendee.paid == c.PAID_BY_GROUP:
         cost = 0
         label = f"{label} (Paid By Group)"
-    elif attendee.is_dealer:
-        label.replace(c.BADGES[c.ATTENDEE_BADGE], c.DEALER_TERM.title())
 
     return (label, cost, c.BADGE)
 
@@ -336,33 +238,6 @@ def promo_code_group_cost(attendee, new_attendee=None):
 
 
 @receipt_calculation.Attendee
-def dealer_badge_credit(attendee, new_attendee=None):
-    if not new_attendee:
-        # This is rolled into base_badge_cost, since it's just what dealer badges cost
-        return
-    
-    if not attendee.is_dealer and not new_attendee.is_dealer:
-        return
-    if attendee.overridden_price and new_attendee.overridden_price:
-        return
-    
-    old_cost = attendee.calculate_badge_cost() * 100
-    new_cost = new_attendee.calculate_badge_cost() * 100
-
-    if old_cost == new_cost:
-        return
-    if attendee.paid != new_attendee.paid and new_attendee.paid == c.NOT_PAID:
-        return # This cost change will be in the paid status receipt item
-    
-    if attendee.is_dealer and new_attendee.is_dealer:
-        return
-    elif attendee.is_dealer:
-        return (f"Remove {c.DEALER_TERM.title()} Status", new_cost - old_cost, 'ribbon')
-    elif new_attendee.is_dealer:
-        return (f"Add {c.DEALER_TERM.title()} Status", new_cost - old_cost, 'ribbon')
-
-
-@receipt_calculation.Attendee
 def badge_comp_credit(attendee, new_attendee=None):
     if not new_attendee:
         old_cost = cost_from_base_badge_item(attendee, new_attendee)
@@ -461,7 +336,6 @@ def promo_code_credit(attendee, new_attendee=None):
 Attendee.receipt_changes = {
     'overridden_price': (overridden_badge_cost, c.BADGE),
     'badge_type': (badge_upgrade_cost, c.BADGE_UPGRADE),
-    'ribbon': (dealer_badge_credit, c.OTHER),
     'paid': (badge_comp_credit, c.ITEM_COMP),
     'extra_donation': (extra_donation_cost, c.DONATION),
     'amount_extra': (amount_extra_cost, c.MERCH),
@@ -520,8 +394,8 @@ def badge_cost(group, new_group=None):
         return
 
     badge_diff = abs(new_badges - old_badges)
-    label = c.DEALER_TERM.title() if new_group.is_dealer else "Group"
-    category = c.BADGE if new_group.is_dealer else c.GROUP_BADGE
+    label = "Group"
+    category = c.GROUP_BADGE
 
     if new_badges > old_badges:
         return (f"Add {label} Badge", new_group.new_badge_cost * 100, category, badge_diff)
@@ -546,7 +420,7 @@ def custom_group_cost(group, new_group=None):
     if not new_group and group.auto_recalc:
         return
     elif not new_group:
-        group_name = c.DEALER_TERM.title() if group.is_dealer else "Group"
+        group_name = "Group"
         return (f"{group_name} (Custom Fee)".format(group.name), group.cost * 100, ('auto_recalc', 'cost'))
     
     if group.auto_recalc and new_group.auto_recalc:
@@ -576,4 +450,4 @@ Group.receipt_changes = {
 }
 
 
-Group.department = c.REG_RECEIPT_ITEM # set to c.DEALER_RECEIPT_ITEM in ReceiptManager functions if group is dealer
+Group.department = c.REG_RECEIPT_ITEM

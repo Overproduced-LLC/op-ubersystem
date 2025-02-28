@@ -7,6 +7,8 @@ WORKDIR /app
 ENV PYTHONPATH=/app
 ENV PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.cargo/bin
 
+LABEL org.opencontainers.image.source=https://github.com/Overproduced-LLC/op-ubersystem
+
 ADD https://astral.sh/uv/install.sh /tmp/install-uv.sh
 
 # We're upgrading to edge because lxml comes with its own libxml2 which must match the system version for xmlsec to work

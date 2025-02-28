@@ -170,69 +170,6 @@ class Root:
             'now': localized_now(),
         }
 
-    def dealer_cost_summary(self, session):
-        dealers = session.query(Group).filter(Group.is_dealer == True,  # noqa: E712
-                                              Group.attendees_have_badges == True, Group.cost > 0)  # noqa: E712
-
-        paid_total = 0
-        paid_custom = defaultdict(int)
-        paid_tables = defaultdict(int)
-        paid_table_sums = defaultdict(int)
-        paid_badges = defaultdict(int)
-
-        unpaid_total = 0
-        unpaid_custom = defaultdict(int)
-        unpaid_tables = defaultdict(int)
-        unpaid_table_sums = defaultdict(int)
-        unpaid_badges = defaultdict(int)
-
-        for group in dealers:
-            if group.is_paid:
-                paid_total += 1
-                if not group.auto_recalc:
-                    paid_custom['count'] += 1
-                    paid_custom['sum'] += group.cost
-                else:
-                    paid_tables[group.tables] += 1
-                    paid_badges[group.badges_purchased] += 1
-            else:
-                unpaid_total += 1
-                if not group.auto_recalc:
-                    unpaid_custom['count'] += 1
-                    unpaid_custom['sum'] += group.cost
-                else:
-                    unpaid_tables[group.tables] += 1
-                    unpaid_badges[group.badges_purchased] += 1
-
-        for dict in [paid_tables, paid_badges, unpaid_tables, unpaid_badges]:
-            dict.pop(0, None)
-
-        for tables in paid_tables:
-            paid_table_sums[tables] = c.get_table_price(tables) * paid_tables[tables]
-        for tables in unpaid_tables:
-            unpaid_table_sums[tables] = c.get_table_price(tables) * unpaid_tables[tables]
-
-        return {
-            'total_dealers': dealers.count(),
-            'paid_total': paid_total,
-            'paid_custom': paid_custom,
-            'paid_tables': paid_tables,
-            'paid_tables_total': get_dict_sum(paid_tables),
-            'paid_table_sums': paid_table_sums,
-            'all_paid_tables_sum': sum(paid_table_sums.values()),
-            'paid_badges': paid_badges,
-            'paid_badges_total': get_dict_sum(paid_badges),
-            'unpaid_total': unpaid_total,
-            'unpaid_custom': unpaid_custom,
-            'unpaid_tables': unpaid_tables,
-            'unpaid_tables_total': get_dict_sum(unpaid_tables),
-            'unpaid_table_sums': unpaid_table_sums,
-            'all_unpaid_tables_sum': sum(unpaid_table_sums.values()),
-            'unpaid_badges': unpaid_badges,
-            'unpaid_badges_total': get_dict_sum(unpaid_badges),
-            'now': localized_now(),
-        }
-
     def attendee_addon_summary(self, session):
         base_filter = [Attendee.has_or_will_have_badge]
         preordered_merch_filter = base_filter + [Attendee.amount_extra > 0]

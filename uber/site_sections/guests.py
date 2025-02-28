@@ -10,7 +10,6 @@ from uber.config import c
 from uber.decorators import ajax, all_renderable, render
 from uber.errors import HTTPRedirect
 from uber.models import GuestMerch, GuestDetailedTravelPlan, GuestTravelPlans
-from uber.model_checks import mivs_show_info_required_fields
 from uber.utils import check
 from uber.tasks.email import send_email
 
@@ -137,32 +136,6 @@ class Root:
         return {
             'guest': guest,
             'guest_stage_plot': guest.stage_plot or guest_stage_plot,
-            'message': message
-        }
-
-    def panel(self, session, guest_id, message='', **params):
-        guest = session.guest_group(guest_id)
-        guest_panel = session.guest_panel(params, checkgroups=['tech_needs'])
-        if cherrypy.request.method == 'POST':
-            if not guest_panel.wants_panel:
-                message = 'You need to tell us whether you want to present a panel'
-            elif guest_panel.wants_panel == c.NO_PANEL:
-                guest_panel.name = guest_panel.length = guest_panel.desc = guest_panel.tech_needs = ''
-            elif not guest_panel.name:
-                message = 'Panel Name is a required field'
-            elif not guest_panel.length:
-                message = 'Panel Length is a required field'
-            elif not guest_panel.desc:
-                message = 'Panel Description is a required field'
-
-            if not message:
-                guest.panel = guest_panel
-                session.add(guest_panel)
-                raise HTTPRedirect('index?id={}&message={}', guest.id, 'Panel preferences updated')
-
-        return {
-            'guest': guest,
-            'guest_panel': guest.panel or guest_panel,
             'message': message
         }
 
@@ -438,157 +411,6 @@ class Root:
         return {
             'guest': guest,
             'message': message
-        }
-
-    def mivs_core_hours(self, session, guest_id, message='', **params):
-        guest = session.guest_group(guest_id)
-        if cherrypy.request.method == 'POST':
-            if guest.group.studio:
-                guest.group.studio.accepted_core_hours = True
-                session.add(guest)
-                raise HTTPRedirect('index?id={}&message={}', guest.id, 'You have accepted the MIVS core hours.')
-            else:
-                message = "Something is wrong with your group -- please contact us at {}.".format(c.MIVS_EMAIL)
-        return {
-            'guest': guest,
-            'message': message,
-        }
-
-    def mivs_discussion(self, session, guest_id, message='', **params):
-        guest = session.guest_group(guest_id)
-        if cherrypy.request.method == 'POST':
-            if guest.group.studio:
-                guest.group.studio.completed_discussion = True
-                guest.group.studio.discussion_emails = ','.join(params['discussion_emails'])
-                session.add(guest)
-                raise HTTPRedirect('index?id={}&message={}', guest.id, 'Discussion email addresses updated.')
-            else:
-                message = "Something is wrong with your group -- please contact us at {}.".format(c.MIVS_EMAIL)
-        return {
-            'guest': guest,
-            'message': message,
-        }
-
-    def mivs_handbook(self, session, guest_id, message='', **params):
-        guest = session.guest_group(guest_id)
-        if cherrypy.request.method == 'POST':
-            if guest.group.studio:
-                guest.group.studio.read_handbook = True
-                session.add(guest)
-                raise HTTPRedirect('index?id={}&message={}', guest.id, 'You have confirmed that you read the handbook.')
-            else:
-                message = "Something is wrong with your group -- please contact us at {}.".format(c.MIVS_EMAIL)
-        return {
-            'guest': guest,
-            'message': message,
-        }
-
-    def mivs_training(self, session, guest_id, message='', **params):
-        guest = session.guest_group(guest_id)
-        if cherrypy.request.method == 'POST':
-            if guest.group.studio:
-                if 'training_password' in params and params['training_password']:
-                    guest.group.studio.training_password = params['training_password']
-                    session.add(guest)
-                    raise HTTPRedirect('index?id={}&message={}', guest.id, 'Secret phrase submitted.')
-                else:
-                    message = "Please enter the secret phrase!"
-            else:
-                message = "Something is wrong with your group -- please contact us at {}.".format(c.MIVS_EMAIL)
-        return {
-            'guest': guest,
-            'message': message,
-        }
-
-    def mivs_hotel_space(self, session, guest_id, message='', **params):
-        guest = session.guest_group(guest_id)
-        if cherrypy.request.method == 'POST':
-            if guest.group.studio:
-                if not params.get('needs_hotel_space'):
-                    message = "Please select if you need hotel space or not."
-                elif 'confirm_checkbox' not in params:
-                    message = "You must confirm that you have {}".format(
-                        "filled out the hotel form." if params.get('needs_hotel_space') == '1'
-                        else "taken care of your own accommodations for MAGFest."
-                    )
-                elif params.get('needs_hotel_space') == '1':
-                    guest.group.studio.name_for_hotel = params.get('name_for_hotel')
-                    guest.group.studio.email_for_hotel = params.get('email_for_hotel')
-                    if not guest.group.studio.name_for_hotel:
-                        message = "Please provide the first and last name you are using in your hotel booking."
-                    elif not guest.group.studio.email_for_hotel:
-                        message = "Please provide the email address you are using in your hotel booking."
-                    elif not params.get('same_checkbox'):
-                        message = "Please confirm you have filled out the same information here as on the hotel form"
-
-                if not message:
-                    guest.group.studio.needs_hotel_space = True if params.get('needs_hotel_space') == '1' else False
-                    session.add(guest)
-                    raise HTTPRedirect('index?id={}&message={}',
-                                       guest.id,
-                                       'Hotel needs updated.')
-            else:
-                message = "Something is wrong with your group -- please contact us at {}.".format(c.MIVS_EMAIL)
-        return {
-            'guest': guest,
-            'message': message,
-            'confirm_checkbox': True if 'confirm_checkbox' in params else False,
-        }
-
-    def mivs_selling_at_event(self, session, guest_id, message='', **params):
-        guest = session.guest_group(guest_id)
-        if cherrypy.request.method == 'POST':
-            if guest.group.studio:
-                if not params['selling_at_event']:
-                    message = "Please select if you want to sell items at MAGFest or not."
-                elif params['selling_at_event'] == '1':
-                    if 'confirm_checkbox' not in params:
-                        message = "You must confirm that you have filled out the Google form provided."
-
-                if not message:
-                    guest.group.studio.selling_at_event = True if params['selling_at_event'] == '1' else False
-                    session.add(guest)
-                    raise HTTPRedirect('index?id={}&message={}',
-                                       guest.id,
-                                       'Selling preferences updated.')
-            else:
-                message = "Something is wrong with your group -- please contact us at {}.".format(c.MIVS_EMAIL)
-        return {
-            'guest': guest,
-            'message': message,
-        }
-
-    def mivs_show_info(self, session, guest_id, message='', **params):
-        guest = session.guest_group(guest_id)
-        if cherrypy.request.method == 'POST':
-            if guest.group.studio:
-                if not params.get('show_info_updated'):
-                    message = "Please confirm you have updated your studio's and game's information."
-
-                if not message and not guest.group.studio.contact_phone:
-                    message = 'Please update your show information to enter a contact phone number for MIVS staff.'
-
-                if not message:
-                    for game in guest.group.studio.confirmed_games:
-                        if not game.guidebook_header or not game.guidebook_thumbnail:
-                            message = "Please upload a Guidebook header and thumbnail."
-                        else:
-                            message = mivs_show_info_required_fields(game)
-                        if message:
-                            message = f"{game.title} show info is missing something: {message}"
-                            break
-
-                if not message:
-                    guest.group.studio.show_info_updated = True
-                    session.add(guest)
-                    raise HTTPRedirect('index?id={}&message={}',
-                                       guest.id,
-                                       'Thanks for confirming your studio and game information is up-to-date!')
-            else:
-                message = "Something is wrong with your group -- please contact us at {}.".format(c.MIVS_EMAIL)
-        return {
-            'guest': guest,
-            'message': message,
         }
 
     def view_inventory_file(self, session, id, item_id, name):

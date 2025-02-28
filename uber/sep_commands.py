@@ -205,24 +205,6 @@ def reset_uber_db():
 
 
 @entry_point
-def decline_and_convert_dealer_groups():
-    from uber.site_sections.groups import decline_and_convert_dealer_group
-    Session.initialize_db(initialize=True)
-    with Session() as session:
-        groups = session.query(Group) \
-            .filter(Group.tables > 0, Group.status == c.WAITLISTED) \
-            .options(
-                subqueryload(Group.attendees).subqueryload(Attendee.admin_account),
-                subqueryload(Group.attendees).subqueryload(Attendee.shifts)) \
-            .order_by(Group.name, Group.id).all()
-
-        for group in groups:
-            print('{}: {}'.format(
-                group.name,
-                decline_and_convert_dealer_group(session, group)))
-
-
-@entry_point
 def notify_admins_of_pending_emails():
     from uber.tasks.email import notify_admins_of_pending_emails as notify_admins
     Session.initialize_db(initialize=True)

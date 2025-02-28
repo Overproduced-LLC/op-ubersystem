@@ -640,90 +640,6 @@ def check_image_size(image, size_list):
         # This probably isn't an image at all
         return
 
-
-class GuidebookUtils():
-    @classmethod
-    def check_guidebook_image_filetype(cls, pic):
-        from uber.custom_tags import readable_join
-
-        if pic.filename.split('.')[-1].lower() not in c.GUIDEBOOK_ALLOWED_IMAGE_TYPES:
-            return f'Image {pic.filename} is not one of the allowed extensions: '\
-                f'{readable_join(c.GUIDEBOOK_ALLOWED_IMAGE_TYPES)}.'
-        return ''
-
-    @classmethod
-    def parse_guidebook_model(cls, selected_model=''):
-        from uber.models import Session, Event
-        if selected_model == 'schedule':
-            return Event
-
-        model = selected_model.split('_')[0] if '_' in selected_model else selected_model
-        return Session.resolve_model(model)
-
-    @classmethod
-    def get_guidebook_models(cls, session, selected_model=''):
-        from uber.models import Group, GuestBio, MITSPicture, IndieGameImage
-
-        model_cls = cls.parse_guidebook_model(selected_model)
-        model_query = session.query(model_cls)
-        stale_filters = [model_cls.last_synced['guidebook'] == None,
-                        cls.cast_jsonb_to_datetime(model_cls.last_synced['guidebook']) < model_cls.last_updated]
-
-        if '_band' in selected_model:
-            model_query = model_query.filter_by(group_type=c.BAND).outerjoin(model_cls.bio)
-            stale_filters.append(cls.cast_jsonb_to_datetime(model_cls.last_synced['guidebook']) < GuestBio.last_updated)
-        elif '_guest' in selected_model:
-            model_query = model_query.filter_by(group_type=c.GUEST).outerjoin(model_cls.bio)
-            stale_filters.append(cls.cast_jsonb_to_datetime(model_cls.last_synced['guidebook']) < GuestBio.last_updated)
-        elif '_dealer' in selected_model:
-            model_query = model_query.filter(model_cls.status.in_([c.APPROVED])).filter_by(is_dealer=True)
-        elif 'IndieGame' in selected_model:
-            model_query = model_query.filter_by(has_been_accepted=True).outerjoin(model_cls.images)
-            stale_filters.append(cls.cast_jsonb_to_datetime(model_cls.last_synced['guidebook']) < IndieGameImage.last_updated)
-        elif 'MITSGame' in selected_model:
-            model_query = model_query.filter_by(has_been_accepted=True).outerjoin(model_cls.pictures)
-            stale_filters.append(cls.cast_jsonb_to_datetime(model_cls.last_synced['guidebook']) < MITSPicture.last_updated)
-            
-        return model_query, stale_filters
-
-    @classmethod
-    def cast_jsonb_to_datetime(cls, jsonb_col):
-        from residue import CoerceUTF8 as UnicodeText, UTCDateTime
-
-        return cast(cast(jsonb_col, UnicodeText), UTCDateTime)
-    
-    @classmethod
-    def get_changed_models(cls, session):
-        """
-        Returns a dictionary of changed "custom list" models and a list of changed "sessions" (Events)
-        """
-        from uber.models import GuestBio, Event
-
-        cl_updates = defaultdict(list)
-        for key, label in c.GUIDEBOOK_MODELS:
-            model_query, filters = GuidebookUtils.get_guidebook_models(session, key)
-            model_query = model_query.filter(or_(*filters))
-            for model in model_query:
-                if model.guidebook_data != model.last_synced.get('data', {}).get('guidebook', {}):
-                    cl_updates[label].append(model)
-                elif model.guidebook_header and not isinstance(model.guidebook_header, GuestBio):
-                    last_synced = model.last_synced_dt('guidebook')
-                    if model.guidebook_header.last_updated > last_synced or model.guidebook_thumbnail.last_updated > last_synced:
-                        cl_updates[label].append(model)
-
-        schedule_updates = []
-        schedule_query = session.query(Event).filter(
-            or_(Event.last_synced['guidebook'] == None,
-                GuidebookUtils.cast_jsonb_to_datetime(Event.last_synced['guidebook']) < Event.last_updated,
-            ))
-
-        for event in schedule_query:
-            if event.guidebook_data != event.last_synced.get('data', {}).get('guidebook', {}):
-                schedule_updates.append(event)
-        
-        return cl_updates, schedule_updates
-
-
 def validate_model(forms, model, preview_model=None, is_admin=False):
     from wtforms import validators
 
@@ -1562,21 +1478,6 @@ class SignNowRequest:
         if details and details.get('signatures'):
             return details['signatures'][0].get('created')
 
-    def create_dealer_signing_link(self):
-        if self.invalid_request("Tried to send a dealer signing link", check_group=True):
-            log.error(self.error_message)
-            return
-
-        first_name = self.group.leader.first_name if self.group.leader else ''
-        last_name = self.group.leader.last_name if self.group.leader else ''
-
-        if self.document.document_id and not self.document.signed:
-            link = self.get_signing_link(first_name,
-                                         last_name,
-                                         (c.REDIRECT_URL_BASE or c.URL_BASE) + '/preregistration/group_members?id={}'
-                                         .format(self.group.id))
-            return link
-
     def get_signing_link(self, first_name="", last_name="", redirect_uri=""):
         from requests import post
         from json import dumps, loads
@@ -1609,36 +1510,6 @@ class SignNowRequest:
             log.error(self.error_message)
         else:
             return signing_request.get('url_no_signup')
-
-    def send_dealer_signing_invite(self):
-        from uber.custom_tags import email_only
-
-        if self.invalid_request("Tried to send a dealer signing invite", check_group=True):
-            log.error(self.error_message)
-            return
-
-        invite_payload = {
-            "to": [
-                {"email": self.group.email, "prefill_signature_name": self.group_leader_name,
-                 "role": "Dealer", "order": 1}
-            ],
-            "from": email_only(c.MARKETPLACE_EMAIL),
-            "cc": [],
-            "subject": f"ACTION REQUIRED: {c.EVENT_NAME} {c.DEALER_TERM.title()} Terms and Conditions",
-            "message": (f"Congratulations on being accepted into the {c.EVENT_NAME} {c.DEALER_LOC_TERM.title()}! "
-                        "Please click the button below to review and sign the terms and conditions. "
-                        "You MUST sign this in order to complete your registration."),
-            "redirect_uri": "{}/preregistration/group_members?id={}".format(c.REDIRECT_URL_BASE or c.URL_BASE,
-                                                                            self.group.id)
-            }
-
-        invite_request = signnow_sdk.Document.invite(self.access_token, self.document.document_id, invite_payload)
-
-        if 'error' in invite_request:
-            self.error_message = "Error sending invite to sign: " + invite_request['error']
-            log.error(self.error_message)
-        else:
-            return invite_request
 
     def get_download_link(self):
         if self.invalid_request("Tried to get a download link"):

@@ -17,7 +17,7 @@ from uber.decorators import ajax, ajax_gettable, all_renderable, credit_card, cs
     redirect_if_at_con_to_kiosk, render, requires_account
 from uber.errors import HTTPRedirect
 from uber.forms import load_forms
-from uber.models import Attendee, AttendeeAccount, Attraction, BadgePickupGroup, Email, Group, PromoCode, PromoCodeGroup, \
+from uber.models import Attendee, AttendeeAccount, BadgePickupGroup, Email, Group, PromoCode, PromoCodeGroup, \
                         ModelReceipt, ReceiptItem, ReceiptTransaction, Tracking
 from uber.tasks.email import send_email
 from uber.utils import add_opt, check, localized_now, normalize_email, normalize_email_legacy, genpasswd, valid_email, \
@@ -25,17 +25,12 @@ from uber.utils import add_opt, check, localized_now, normalize_email, normalize
 from uber.payments import PreregCart, TransactionRequest, ReceiptManager, SpinTerminalRequest
 
 
-def check_if_can_reg(is_dealer_reg=False):
+def check_if_can_reg():
     if c.DEV_BOX:
         pass  # Don't redirect to any of the pages below.
-    elif is_dealer_reg and not c.DEALER_REG_OPEN:
-        if c.AFTER_DEALER_REG_START:
-            return render('static_views/dealer_reg_closed.html')
-        else:
-            return render('static_views/dealer_reg_not_open.html')
     elif not c.ATTENDEE_BADGE_AVAILABLE:
         return render('static_views/prereg_soldout.html')
-    elif c.BEFORE_PREREG_OPEN and not is_dealer_reg:
+    elif c.BEFORE_PREREG_OPEN:
         return render('static_views/prereg_not_yet_open.html')
     elif c.AFTER_PREREG_TAKEDOWN and not c.AT_THE_CON:
         return render('static_views/prereg_closed.html')
@@ -175,9 +170,6 @@ class Root:
         else:
             if cart == PreregCart.unpaid_preregs:
                 raise HTTPRedirect('form?message={}', 'That preregistration expired or has already been finalized.')
-            elif cart == PreregCart.pending_dealers:
-                raise HTTPRedirect('dealer_registration?message={}',
-                                   'That application expired or has already been finalized.')
             raise HTTPRedirect('index') if if_not_found is None else if_not_found
 
     def _get_attendee_or_group(self, params):
@@ -252,35 +244,6 @@ class Root:
                 'account_password': account_password,
             }
 
-    def reapply(self, session, id, **params):
-        errors = check_if_can_reg(is_dealer_reg=True)
-        if errors:
-            return errors
-        
-        cherrypy.session['imported_attendee_ids'] = {}
-        for key in PreregCart.session_keys:
-            cherrypy.session.pop(key)
-
-        old_attendee = session.attendee(id)
-        old_attendee_dict = old_attendee.to_dict(c.UNTRANSFERABLE_ATTRS)
-        del old_attendee_dict['id']
-        new_attendee = Attendee(**old_attendee_dict)
-        new_attendee.badge_type = c.PSEUDO_DEALER_BADGE
-
-        old_group = session.group(old_attendee.group.id)
-        old_group_dict = old_group.to_dict(c.GROUP_REAPPLY_ATTRS)  # TODO: c.GROUP_REAPPLY_ATTRS doesn't exist??
-        del old_group_dict['id']
-        new_group = Group(**old_group_dict)
-
-        new_attendee.group_id = new_group.id
-        new_group.attendees = [new_attendee]
-
-        cherrypy.session.setdefault('imported_attendee_ids', {})[new_attendee.id] = id
-
-        PreregCart.pending_dealers[new_group.id] = PreregCart.to_sessionized(new_group,
-                                                                             badge_count=old_group.badges_purchased)
-        raise HTTPRedirect("dealer_registration?edit_id={}", new_group.id)
-
     def repurchase(self, session, id, skip_confirm=False, **params):
         errors = check_if_can_reg()
         if errors:
@@ -330,112 +293,6 @@ class Root:
                         else "Please complete your registration below."
 
         raise HTTPRedirect(f"index?message={message}")
-
-    @cherrypy.expose('post_dealer')
-    @requires_account()
-    def dealer_registration(self, session, message='', edit_id=None, **params):
-        errors = check_if_can_reg(is_dealer_reg=True)
-        if errors:
-            return errors
-
-        if c.DEALER_INVITE_CODE and not edit_id:
-            if not params.get('invite_code'):
-                raise HTTPRedirect("dealer_registration?message={}s must have an invite code to register."
-                                   .format(c.DEALER_TERM.capitalize()))
-            elif params.get('invite_code') != c.DEALER_INVITE_CODE:
-                raise HTTPRedirect("dealer_registration?message=Incorrect {} invite code.".format(c.DEALER_REG_TERM))
-
-        params['id'] = 'None'   # security!
-        group = Group(is_dealer=True)
-
-        if edit_id is not None:
-            group = self._get_unsaved(edit_id, PreregCart.pending_dealers)
-            params['badges'] = params.get('badges', getattr(group, 'badge_count', 0))
-
-        badges = params.get('badges', 0)
-        attendee = group.attendees[0] if group.attendees else None
-
-        forms = load_forms(params, group, ['ContactInfo', 'TableInfo'])
-        for form in forms.values():
-            form.populate_obj(group)
-
-        if cherrypy.request.method == 'POST':
-            message = check(group, prereg=True)
-            if not message:
-                track_type = c.UNPAID_PREREG
-
-                if attendee:
-                    group.attendees = [attendee]
-                PreregCart.pending_dealers[group.id] = PreregCart.to_sessionized(group,
-                                                                                 badge_count=badges)
-                Tracking.track(track_type, group)
-                if 'go_to_cart' in params:
-                    raise HTTPRedirect('additional_info?group_id={}{}'
-                                       .format(group.id, "&editing={}".format(edit_id) if edit_id else ""))
-                raise HTTPRedirect("form?dealer_id={}", group.id)
-        else:
-            if c.DEALER_REG_SOFT_CLOSED:
-                message = '{} is closed, but you can ' \
-                    'fill out this form to add yourself to our waitlist'.format(c.DEALER_REG_TERM.title())
-
-        return {
-                'logged_in_account': session.current_attendee_account(),
-                'is_prereg_dealer': True,
-                'forms': forms,
-                'message':    message,
-                'group':      group,
-                'attendee':   Attendee(),
-                'edit_id':    edit_id,
-                'badges': badges,
-                'invite_code': params.get('invite_code', ''),
-            }
-
-    def finish_dealer_reg(self, session, id, **params):
-        errors = check_if_can_reg(is_dealer_reg=True)
-        if errors:
-            return errors
-
-        group = self._get_unsaved(id, PreregCart.pending_dealers)
-        group.is_dealer = True
-        attendee = group.attendees[0]
-
-        if c.ATTENDEE_ACCOUNTS_ENABLED:
-            attendee_account = session.current_attendee_account()
-            session.add_attendee_to_account(attendee, attendee_account)
-
-        if attendee.id in cherrypy.session.setdefault('imported_attendee_ids', {}):
-            old_attendee = session.attendee(cherrypy.session['imported_attendee_ids'][attendee.id])
-            old_attendee.current_attendee = attendee
-            session.add(old_attendee)
-            del cherrypy.session['imported_attendee_ids'][attendee.id]
-
-        attendee.paid = c.PAID_BY_GROUP
-        group.attendees = [attendee]
-        session.assign_badges(group, group.badge_count)
-        group.status = c.WAITLISTED if c.DEALER_REG_SOFT_CLOSED else c.UNAPPROVED
-        attendee.ribbon = add_opt(attendee.ribbon_ints, c.DEALER_RIBBON)
-        attendee.badge_type = c.ATTENDEE_BADGE
-
-        session.add_all([attendee, group])
-        session.commit()
-        try:
-            if c.NOTIFY_DEALER_APPLIED:
-                send_email.delay(
-                    c.MARKETPLACE_EMAIL,
-                    c.MARKETPLACE_NOTIFICATIONS_EMAIL,
-                    '{} Received'.format(c.DEALER_APP_TERM.title()),
-                    render('emails/dealers/reg_notification.txt', {'group': group}, encoding=None),
-                    model=group.to_dict('id'))
-            send_email.delay(
-                c.MARKETPLACE_EMAIL,
-                attendee.email_to_address,
-                '{} Received'.format(c.DEALER_APP_TERM.title()),
-                render('emails/dealers/application.html', {'group': group}, encoding=None),
-                'html',
-                model=group.to_dict('id'))
-        except Exception:
-            log.error('unable to send marketplace application confirmation email', exc_info=True)
-        raise HTTPRedirect('dealer_confirmation?id={}', group.id)
 
     def claim_badge(self, session, message='', **params):
         if params.get('id') in [None, '', 'None']:
@@ -515,8 +372,7 @@ class Root:
         # Help prevent data leaking between people registering on the same computer
         cherrypy.session.pop('paid_preregs')
 
-        dealer_id = params.get('dealer_id', params.get('group_id', None))
-        errors = check_if_can_reg(bool(dealer_id))
+        errors = check_if_can_reg()
         if errors:
             return errors
         """
@@ -534,15 +390,6 @@ class Root:
 
         if cherrypy.request.method == 'POST' and not params.get('badge_type'):
             params['badge_type'] = c.ATTENDEE_BADGE
-
-        if dealer_id:
-            group = self._get_unsaved(dealer_id, PreregCart.pending_dealers)
-            if group.attendees:
-                attendee = group.attendees[0]
-                loaded_from_group = True
-            else:
-                attendee.badge_type = c.PSEUDO_DEALER_BADGE
-            attendee.group_id = dealer_id
 
         if edit_id is not None:
             attendee = self._get_unsaved(edit_id)
@@ -578,7 +425,7 @@ class Root:
                 'name': name,
                 'badges': badges,
                 'invite_code': params.get('invite_code', ''),
-                'is_prereg_dealer': bool(dealer_id),
+                'is_prereg_dealer': False,
             }
 
         if cherrypy.request.method == 'POST':
@@ -594,38 +441,17 @@ class Root:
             if not message:
                 track_type = c.UNPAID_PREREG
 
-                if 'group_id' in params and attendee.badge_type == c.PSEUDO_DEALER_BADGE:
-                    attendee.group_id = params['group_id']
+                if attendee.id in PreregCart.unpaid_preregs:
+                    track_type = c.EDITED_PREREG
+                    # Clear out any previously cached targets, in case the unpaid badge
+                    # has been edited and changed from a single to a group or vice versa.
+                    del PreregCart.unpaid_preregs[attendee.id]
 
-                    if params.get('copy_email'):
-                        attendee.email = group.email_address
-                    if params.get('copy_phone'):
-                        attendee.cellphone = group.phone
-                    if params.get('copy_address'):
-                        attendee.address1 = group.address1
-                        attendee.address2 = group.address2
-                        attendee.country = group.country
-                        attendee.region = group.region
-                        attendee.city = group.city
-                        attendee.zip_code = group.zip_code
-
-                    group.attendees = [attendee]
-                    PreregCart.pending_dealers[group.id] = PreregCart.to_sessionized(group,
-                                                                                     badge_count=group.badge_count)
-                    Tracking.track(track_type, group)
-                    url_string = "group_id={}".format(group.id)
-                else:
-                    if attendee.id in PreregCart.unpaid_preregs:
-                        track_type = c.EDITED_PREREG
-                        # Clear out any previously cached targets, in case the unpaid badge
-                        # has been edited and changed from a single to a group or vice versa.
-                        del PreregCart.unpaid_preregs[attendee.id]
-
-                    PreregCart.unpaid_preregs[attendee.id] = PreregCart.to_sessionized(attendee,
-                                                                                       name=params.get('name'),
-                                                                                       badges=params.get('badges'))
-                    Tracking.track(track_type, attendee)
-                    url_string = "attendee_id={}".format(attendee.id)
+                PreregCart.unpaid_preregs[attendee.id] = PreregCart.to_sessionized(attendee,
+                                                                                    name=params.get('name'),
+                                                                                    badges=params.get('badges'))
+                Tracking.track(track_type, attendee)
+                url_string = "attendee_id={}".format(attendee.id)
 
                 if not message:
                     if session.attendees_with_badges().filter_by(
@@ -648,7 +474,7 @@ class Root:
         return {
             'logged_in_account': session.current_attendee_account(),
             'loaded_from_group': loaded_from_group,
-            'is_prereg_dealer': bool(dealer_id),
+            'is_prereg_dealer': False,
             'message':    message,
             'attendee':   attendee,
             'forms': forms,
@@ -663,8 +489,7 @@ class Root:
         }
 
     def additional_info(self, session, message='', editing=None, **params):
-        is_dealer_reg = 'group_id' in params
-        errors = check_if_can_reg(is_dealer_reg)
+        errors = check_if_can_reg()
         if errors:
             return errors
 
@@ -678,10 +503,6 @@ class Root:
         if cherrypy.request.method == "POST":
             _add_promo_code(session, attendee, params.get('promo_code_code'))
 
-            if attendee.badge_type == c.PSEUDO_DEALER_BADGE:
-                group.attendees = [attendee]
-                PreregCart.pending_dealers[group.id] = PreregCart.to_sessionized(group, badge_count=group.badge_count)
-                raise HTTPRedirect('finish_dealer_reg?id={}', attendee.group_id)
             PreregCart.unpaid_preregs[attendee.id] = PreregCart.to_sessionized(attendee,
                                                                                name=attendee.name,
                                                                                badges=attendee.badges)
@@ -698,7 +519,7 @@ class Root:
         }
 
     def duplicate(self, session, **params):
-        errors = check_if_can_reg(is_dealer_reg='group_id' in params)
+        errors = check_if_can_reg()
         if errors:
             return errors
 
@@ -716,7 +537,7 @@ class Root:
         }
 
     def banned(self, **params):
-        errors = check_if_can_reg(is_dealer_reg='group_id' in params)
+        errors = check_if_can_reg()
         if errors:
             return errors
 
@@ -1272,15 +1093,6 @@ class Root:
 
         if cherrypy.request.method == 'POST':
             session.commit()
-            if group.is_dealer:
-                send_email.delay(
-                    c.MARKETPLACE_EMAIL,
-                    c.MARKETPLACE_NOTIFICATIONS_EMAIL,
-                    '{} Changed'.format(c.DEALER_APP_TERM.title()),
-                    render('emails/dealers/appchange_notification.html', {'group': group}, encoding=None),
-                    'html',
-                    model=group.to_dict('id'))
-
             message = 'Thank you! Your application has been updated.'
 
             raise HTTPRedirect('group_members?id={}&message={}', group.id, message)
@@ -2123,7 +1935,6 @@ class Root:
             'attendee':      attendee,
             'homepage_account': session.get_attendee_account_by_attendee(attendee),
             'message':       message,
-            'attractions':   session.query(Attraction).filter_by(is_public=True).all(),
             'badge_cost':    attendee.badge_cost if attendee.paid != c.PAID_BY_GROUP else 0,
             'receipt':       session.get_receipt_by_model(attendee) if attendee.is_valid else None,
             'incomplete_txn':  receipt.get_last_incomplete_txn() if receipt else None,
@@ -2132,36 +1943,6 @@ class Root:
                               [form.get_non_admin_locked_fields(attendee) for form in forms.values()
                                ] for item in sublist]
         }
-
-    @ajax
-    def validate_dealer(self, session, form_list=[], is_prereg=False, **params):
-        id = params.get('id', params.get('edit_id'))
-        if id in [None, '', 'None']:
-            group = Group(tables=1)
-        else:
-            try:
-                group = session.group(id)
-            except NoResultFound:
-                if is_prereg:
-                    group = self._get_unsaved(
-                        id,
-                        PreregCart.pending_dealers,
-                        if_not_found=HTTPRedirect('dealer_registration?message={}',
-                                                  'That application expired or has already been finalized.'))
-                else:
-                    return {"error": {'': ["We could not find the group you're trying to update."]}}
-
-        if not form_list:
-            form_list = ['ContactInfo', 'TableInfo']
-        elif isinstance(form_list, str):
-            form_list = [form_list]
-        forms = load_forms(params, group, form_list, get_optional=False)
-
-        all_errors = validate_model(forms, group, Group(**group.to_dict()))
-        if all_errors:
-            return {"error": all_errors}
-
-        return {"success": True}
 
     @ajax
     def validate_attendee(self, session, form_list=[], is_prereg=False, **params):

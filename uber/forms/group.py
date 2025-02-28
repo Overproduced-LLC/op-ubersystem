@@ -10,7 +10,7 @@ from uber.forms.attendee import valid_cellphone
 from uber.custom_tags import format_currency, pluralize
 from uber.model_checks import invalid_phone_number
 
-__all__ = ['GroupInfo', 'ContactInfo', 'TableInfo', 'AdminGroupInfo', 'AdminTableInfo']
+__all__ = ['GroupInfo', 'ContactInfo', 'AdminGroupInfo']
 
 
 class GroupInfo(MagForm):
@@ -38,11 +38,7 @@ class GroupInfo(MagForm):
 class AdminGroupInfo(GroupInfo):
     guest_group_type = SelectField('Checklist Type', default=0, choices=[(0, 'N/A')] + c.GROUP_TYPE_OPTS, coerce=int)
     can_add = BooleanField('This group may purchase additional badges.')
-    is_dealer = BooleanField(f'This group should be treated as {c.DEALER_INDEFINITE_TERM}.',
-                             description=f"{c.DEALER_TERM.title()}s are prevented from paying until they are approved,"
-                             "but may assign and purchase add-ons for badges.")
     new_badge_type = SelectField('Badge Type', choices=c.BADGE_OPTS, coerce=int)
-    new_ribbons = SelectMultipleField('Badge Ribbons', choices=c.RIBBON_OPTS, coerce=int, widget=MultiCheckbox())
     cost = IntegerField('Total Group Price', validators=[
         validators.NumberRange(min=0, message="Total Group Price must be a number that is 0 or higher.")
     ], widget=NumberInputGroup())
@@ -66,78 +62,13 @@ class ContactInfo(AddressForm, MagForm):
 
     def get_optional_fields(self, group, is_admin=False):
         optional_list = super().get_optional_fields(group, is_admin)
-
-        if not group.is_dealer:
-            optional_list.extend(['address1', 'city', 'region', 'zip_code', 'country'])
-
+        optional_list.extend(['address1', 'city', 'region', 'zip_code', 'country'])
         return optional_list
 
     def validate_phone(form, field):
         if field.data and invalid_phone_number(field.data):
             raise ValidationError('Your phone number was not a valid 10-digit US phone number. '
                                   'Please include a country code (e.g. +44) for international numbers.')
-
-
-class TableInfo(GroupInfo):
-    name = StringField('Table Name', validators=[
-        validators.DataRequired("Please enter a table name."),
-        validators.Length(max=40, message="Table names cannot be longer than 40 characters.")
-        ])
-    description = StringField('Description', validators=[
-        validators.DataRequired("Please provide a brief description of your business.")
-        ], description="Please keep to one sentence.")
-    website = StringField('Website', validators=[
-        validators.DataRequired("Please enter your business' website address.")
-        ], description="The one you want us to link on our website, or where we can view your work "
-        "to judge your application.")
-    wares = TextAreaField('What do you sell?', validators=[
-        validators.DataRequired("You must provide a detailed explanation of what you sell "
-                                "for us to evaluate your submission.")
-        ], description="Please be detailed; include a link to view your wares. "
-        "You must include links to what you sell or a portfolio otherwise you will be automatically waitlisted.")
-    categories = SelectMultipleField('Categories', validators=[
-        validators.DataRequired("Please select at least one category your wares fall under.")
-        ], choices=c.DEALER_WARES_OPTS, coerce=int, widget=MultiCheckbox())
-    categories_text = StringField('Other')
-    special_needs = TextAreaField('Special Requests', description="No guarantees that we can accommodate any requests.")
-
-    def get_optional_fields(self, group, is_admin=False):
-        optional_list = super().get_optional_fields(group, is_admin)
-        if not group.is_dealer:
-            optional_list.extend(['description', 'website', 'wares', 'categories'])
-        return optional_list
-
-    def get_non_admin_locked_fields(self, group):
-        if group.is_new:
-            return []
-        elif group.status in c.DEALER_EDITABLE_STATUSES:
-            return ['tables']
-
-        return list(self._fields.keys())
-
-    def badges_label(self):
-        return "Badges (" + format_currency(c.DEALER_BADGE_PRICE) + " each)"
-
-    def badges_desc(self):
-        return "The number of people working your table, including yourself."
-
-    def validate_categories(form, field):
-        if field.data and c.OTHER in field.data and not form.categories_text.data:
-            raise ValidationError("Please describe what 'other' categories your wares fall under.")
-
-
-class AdminTableInfo(TableInfo, AdminGroupInfo):
-    status = SelectField('Status', choices=c.DEALER_STATUS_OPTS, coerce=int)
-    shared_with_name = StringField(
-        'Shared With', description=f"The {c.DEALER_APP_TERM} this {c.DEALER_APP_TERM} is sharing a table with.")
-    convert_badges = BooleanField("Convert this group's badges to individual badges.")
-
-    def can_add_label(self):
-        if c.MAX_DEALERS:
-            return "This {} can add up to {} badges.".format(c.DEALER_TERM, c.MAX_DEALERS)
-        else:
-            return "This {} can add badges up to their personal maximum.".format(c.DEALER_TERM)
-
 
 class LeaderInfo(MagForm):
     field_validation = CustomValidation()
@@ -161,7 +92,7 @@ class LeaderInfo(MagForm):
     def get_optional_fields(self, group, is_admin=False):
         optional_list = super().get_optional_fields(group, is_admin)
 
-        if not group.is_dealer and not group.guest and not getattr(group, 'guest_group_type', None):
+        if not group.guest and not getattr(group, 'guest_group_type', None):
             optional_list.append('leader_email')
 
             # This mess is required because including a field in this list prevents

@@ -27,7 +27,7 @@ from uber.config import c
 from uber.decorators import department_id_adapter
 from uber.errors import CSRFException
 from uber.models import (AdminAccount, ApiToken, Attendee, AttendeeAccount, Department, DeptMembership,
-                         DeptRole, Event, IndieJudge, IndieStudio, Job, Session, Shift, Group,
+                         DeptRole, Job, Session, Shift, Group,
                          GuestGroup, Room, HotelRequests, RoomAssignment)
 from uber.models.badge_printing import PrintJob
 from uber.serializer import serializer
@@ -193,15 +193,6 @@ def _prepare_attendees_export(attendees, include_account_ids=False, include_apps
         'admin_notes',
     ]
 
-    marketplace_import_fields = [
-        'business_name',
-        'categories',
-        'categories_text',
-        'description',
-        'special_needs',
-        'admin_notes',
-    ]
-
     fields = AttendeeLookup.attendee_import_fields + Attendee.import_fields
 
     if include_depts or include_apps:
@@ -216,12 +207,6 @@ def _prepare_attendees_export(attendees, include_account_ids=False, include_apps
 
         if include_account_ids and a.managers:
             d['attendee_account_ids'] = [m.id for m in a.managers]
-
-        if include_apps:
-            if a.art_show_applications:
-                d['art_show_app'] = a.art_show_applications[0].to_dict(art_show_import_fields)
-            if a.marketplace_applications:
-                d['marketplace_app'] = a.marketplace_applications[0].to_dict(marketplace_import_fields)
 
         if include_depts:
             assigned_depts = {}
@@ -449,83 +434,6 @@ class GuestLookup:
                 query = session.query(GuestGroup)
             return [guest.to_dict(self.fields) for guest in query]
 
-
-@all_api_auth('api_read')
-class MivsLookup:
-    fields = {
-        'name': True,
-        'address': True,
-        'website': True,
-        'twitter': True,
-        'facebook': True,
-        'status_label': True,
-        'staff_notes': True,
-        'group': {
-            'name': True,
-        },
-        'developers': {
-            'full_name': True,
-            'first_name': True,
-            'last_name': True,
-            'email': True,
-            'cellphone': True,
-        },
-    }
-
-    def statuses(self):
-        return c.MIVS_STUDIO_STATUS_VARS
-
-    def list(self, status=False):
-        """
-        Returns a list of MIVS studios and their developers.
-
-        Optionally, 'status' may be passed to limit the results to MIVS
-        studios with a specific status. Use 'confirmed' to get MIVS teams
-        who are attending the event.
-
-        For a full list of statuses, call the "mivs.statuses" method.
-
-        """
-        with Session() as session:
-            if status and status.upper() in c.MIVS_STUDIO_STATUS_VARS:
-                query = session.query(IndieStudio).filter_by(status=getattr(c, status.upper()))
-            else:
-                query = session.query(IndieStudio)
-            return [mivs.to_dict(self.fields) for mivs in query]
-
-    def export_judges(self):
-        """
-        Returns a set of tuples of MIVS judges and their corresponding attendees.
-        Excludes judges that were disqualified or opted out of judging.
-
-        Results are returned in the format expected by
-        <a href="../mivs_admin/import_judges">the MIVS judge importer</a>.
-        """
-        judges_list = []
-        with Session() as session:
-            judges = session.query(IndieJudge).filter(not_(IndieJudge.status.in_([c.CANCELLED, c.DISQUALIFIED])))
-
-
-            for judge in judges:
-                fields = AttendeeLookup.attendee_import_fields + Attendee.import_fields
-                judges_list.append((judge.to_dict(), judge.attendee.to_dict(fields)))
-
-            return judges_list
-    
-    def lookup_judge(self, id):
-        try:
-            str(uuid.UUID(id))
-        except Exception as e:
-            raise HTTPError(400, f"Invalid ID: {str(e)}")
-
-        with Session() as session:
-            judge = session.query(IndieJudge).filter(IndieJudge.id == id).first()
-            if judge:
-                return judge.to_dict()
-            else:
-                raise HTTPError(404, f'No judge found with ID {id}.')
-
-
 @all_api_auth('api_read')
 class AttendeeLookup:
     fields = {
@@ -553,7 +461,6 @@ class AttendeeLookup:
         'donation_tier_label': True,
         'staffing': True,
         'is_dept_head': True,
-        'ribbon_labels': True,
         'public_id': True,
     }
 
@@ -789,8 +696,8 @@ class AttendeeLookup:
             session.add(attendee)
 
             # Staff (not volunteers) also almost never need to pay by default
-            if (attendee.staffing and c.VOLUNTEER_RIBBON not in attendee.ribbon_ints) and 'paid' not in params:
-                attendee.paid = c.NEED_NOT_PAY
+            # if (attendee.staffing) and 'paid' not in params:
+            #     attendee.paid = c.NEED_NOT_PAY
 
             message = check(attendee)
             if message:
@@ -835,9 +742,9 @@ class AttendeeLookup:
                 raise HTTPError(400, message)
 
             # Staff (not volunteers) also almost never need to pay by default
-            if attendee.staffing and not attendee.orig_value_of('staffing') \
-                    and c.VOLUNTEER_RIBBON not in attendee.ribbon_ints and 'paid' not in params:
-                attendee.paid = c.NEED_NOT_PAY
+            # if attendee.staffing and not attendee.orig_value_of('staffing') \
+            #         and c.VOLUNTEER_RIBBON not in attendee.ribbon_ints and 'paid' not in params:
+            #     attendee.paid = c.NEED_NOT_PAY
 
             return attendee.id
 
@@ -1078,75 +985,12 @@ class GroupLookup:
         'can_add': True,
     }
 
-    dealer_fields = dict(fields, **{
-        'tables': True,
-        'wares': True,
-        'description': True,
-        'zip_code': True,
-        'address1': True,
-        'address2': True,
-        'city': True,
-        'region': True,
-        'country': True,
-        'website': True,
-        'special_needs': True,
-        'categories': True,
-        'categories_text': True,
-    })
-
     group_import_fields = [
         'name',
         'admin_notes',
         'badges',
         'can_add',
     ]
-
-    dealer_import_fields = [
-        'tables',
-        'wares',
-        'description',
-        'zip_code',
-        'address1',
-        'address2',
-        'city',
-        'region',
-        'country',
-        'website',
-        'special_needs',
-        'categories',
-        'categories_text',
-    ]
-
-    def dealers(self, status=None):
-        """
-        Returns a list of Groups that are also dealers.
-
-        Optionally, `status` may be passed to limit the results to dealers with a specific
-        status.
-
-        """
-        with Session() as session:
-            filters = [Group.is_dealer == True]  # noqa: E712
-            if status and status.upper() in c.DEALER_STATUS_VARS:
-                filters += [Group.status == getattr(c, status.upper())]
-            query = session.query(Group).filter(*filters)
-            groups = []
-
-            for g in query.all():
-                d = g.to_dict(['id'] + GroupLookup.group_import_fields + Group.import_fields
-                              + GroupLookup.dealer_import_fields)
-
-                attendees = {}
-                for attendee in g.attendees:
-                    if not attendee.is_unassigned:
-                        attendees[attendee.id] = attendee.full_name + " <{}>".format(attendee.email)
-
-                d.update({
-                    'assigned_attendees': attendees,
-                })
-                groups.append(d)
-
-            return {'groups': groups}
 
     def export_attendees(self, id, full=False):
         """
@@ -1227,11 +1071,7 @@ class GroupLookup:
 
             groups = []
             for g in all_groups:
-                if full and g.is_dealer:
-                    d = g.to_dict(fields + GroupLookup.dealer_import_fields)
-                else:
-                    d = g.to_dict(fields)
-
+                d = g.to_dict(fields)
                 attendees = {}
                 for attendee in g.attendees:
                     if not attendee.is_unassigned:
@@ -1468,30 +1308,6 @@ class HotelLookup:
             "names": c.NIGHT_NAMES
         }
 
-
-@all_api_auth('api_read')
-class ScheduleLookup:
-    def schedule(self):
-        """
-        Returns the entire schedule in machine parseable format.
-        """
-        with Session() as session:
-            return [
-                {
-                    'name': event.name,
-                    'location': event.location_label,
-                    'start': event.start_time_local.strftime('%I%p %a').lstrip('0'),
-                    'end': event.end_time_local.strftime('%I%p %a').lstrip('0'),
-                    'start_unix': int(mktime(event.start_time.utctimetuple())),
-                    'end_unix': int(mktime(event.end_time.utctimetuple())),
-                    'duration': event.minutes,
-                    'description': event.public_description or event.description,
-                    'panelists': [panelist.attendee.full_name for panelist in event.assigned_panelists]
-                }
-                for event in sorted(session.query(Event).all(), key=lambda e: [e.start_time, e.location_label])
-            ]
-
-
 @all_api_auth('api_read')
 class BarcodeLookup:
     def lookup_attendee_from_barcode(self, barcode_value, full=False):
@@ -1534,202 +1350,6 @@ class BarcodeLookup:
         except Exception as e:
             raise HTTPError(500, "Couldn't look up barcode value: " + str(e))
 
-
-class PrintJobLookup:
-    def _build_job_json_data(self, job):
-        result_json = job.json_data
-        result_json['admin_name'] = job.admin_name
-        result_json['printer_id'] = job.printer_id
-        result_json['reg_station'] = job.reg_station
-        result_json['is_minor'] = job.is_minor
-
-        return result_json
-
-    @api_auth('api_read')
-    def get_pending(self, printer_ids='', restart=False, dry_run=False):
-        """
-        Returns pending print jobs' `json_data`.
-
-        Takes either a single printer ID or a comma-separated list of printer IDs as the first parameter.
-        If this is set, only the print jobs whose printer_id match one of those in the list are returned.
-
-        Takes the boolean `restart` as the second parameter.
-        If true, pulls any print job that's not marked as printed or invalid.
-        Otherwise, only print jobs not marked as sent to printer are returned.
-
-        Takes the boolean `dry_run` as the third parameter.
-        If true, pulls print jobs without marking them as sent to printer.
-
-        Returns a dictionary of pending jobs' `json_data` plus job metadata, keyed by job ID.
-        """
-
-        with Session() as session:
-            filters = [PrintJob.printed == None, PrintJob.ready == True, PrintJob.errors == '']  # noqa: E711
-            if printer_ids:
-                printer_ids = [id.strip() for id in printer_ids.split(',')]
-                filters += [PrintJob.printer_id.in_(printer_ids)]
-            if not restart:
-                filters += [PrintJob.queued == None]  # noqa: E711
-            print_jobs = session.query(PrintJob).filter(*filters).all()
-
-            results = {}
-            for job in print_jobs:
-                if restart:
-                    errors = session.update_badge_print_job(job.id)
-                    if errors:
-                        if job.errors:
-                            job.errors += "; "
-                        job.errors += "; ".join(errors)
-                if not restart or not errors:
-                    results[job.id] = self._build_job_json_data(job)
-                    if not dry_run:
-                        job.queued = datetime.utcnow()
-                        session.add(job)
-                        session.commit()
-
-        return results
-
-    @api_auth('api_create')
-    def create(self, attendee_id, printer_id, reg_station, print_fee=None):
-        """
-        Create a new print job for a specified badge.
-
-        Takes the attendee ID as the first parameter, the printer ID as the second parameter,
-        and the reg station number as the third parameter.
-
-        Takes a print_fee as an optional fourth parameter. If this is not specified, an error
-        is returned unless this is the first time this attendee's badge is being printed.
-
-        Returns a dictionary of the new job's `json_data` plus job metadata, keyed by job ID.
-        """
-        with Session() as session:
-            try:
-                reg_station = int(reg_station)
-            except ValueError:
-                raise HTTPError(400, "Reg station must be an integer.")
-
-            attendee = session.query(Attendee).filter_by(id=attendee_id).first()
-            if not attendee:
-                raise HTTPError(404, "Attendee not found.")
-
-            print_id, errors = session.add_to_print_queue(attendee, printer_id, reg_station, print_fee)
-            if errors:
-                raise HTTPError(424, "Attendee not ready to print. Error(s): {}".format("; ".join(errors)))
-
-            return {print_id: self._build_job_json_data(session.print_job(print_id))}
-
-    @api_auth('api_update')
-    def add_error(self, job_ids, error):
-        """
-        Adds an error message to a print job, effectively marking it invalid.
-
-        Takes either a single job ID or a comma-seperated list of job IDs as the first parameter.
-
-        Takes the error message as the second parameter.
-
-        Returns a dictionary of changed jobs' `json_data` plus job metadata, keyed by job ID.
-        """
-        with Session() as session:
-            if not job_ids:
-                raise HTTPError(400, "You must provide at least one job ID.")
-
-            job_ids = [id.strip() for id in job_ids.split(',')]
-            jobs = session.query(PrintJob).filter(PrintJob.id.in_(job_ids)).all()
-
-            if not jobs:
-                raise HTTPError(404, '"No jobs found with those IDs."')
-
-            results = {}
-
-            for job in jobs:
-                results[job.id] = self._build_job_json_data(job)
-                if job.errors:
-                    job.errors += "; " + error
-                else:
-                    job.errors = error
-                session.add(job)
-                session.commit()
-
-            return results
-
-    @api_auth('api_update')
-    def mark_complete(self, job_ids=''):
-        """
-        Marks print jobs as printed.
-
-        Takes either a single job ID or a comma-separated list of job IDs as the first parameter.
-
-        Returns a dictionary of changed jobs' `json_data` plus job metadata, keyed by job ID.
-        """
-        with Session() as session:
-            base_query = session.query(PrintJob).filter_by(printed=None)
-
-            if not job_ids:
-                raise HTTPError(400, "You must provide at least one job ID.")
-
-            job_ids = [id.strip() for id in job_ids.split(',')]
-            jobs = base_query.filter(PrintJob.id.in_(job_ids)).all()
-
-            if not jobs:
-                raise HTTPError(404, '"No jobs found with those IDs."')
-
-            results = {}
-
-            for job in jobs:
-                results[job.id] = self._build_job_json_data(job)
-                job.printed = datetime.utcnow()
-                session.add(job)
-                session.commit()
-
-            return results
-
-    @api_auth('api_update')
-    def clear_jobs(self, printer_ids='', all=False, invalidate=False, error=''):
-        """
-        Marks all pending print jobs as either printed or invalid, effectively clearing them from the queue.
-
-        Takes either a single printer ID, comma-separated list of printer IDs, or empty string as the first parameter.
-        If this is set, only the print jobs whose printer_id match one of those in the list are cleared.
-
-        Takes the boolean `all` as the second parameter.
-        If true, all jobs are cleared. Otherwise, at least one printer_id is required.
-
-        Takes the boolean `invalidate` as the third parameter.
-        If true, cleared jobs are marked invalid instead of printed (the default), marked with the parameter `error`.
-
-        Returns a dictionary of changed jobs' `json_data` plus job metadata, keyed by job ID.
-        """
-        with Session() as session:
-            filters = [PrintJob.printed == None, PrintJob.ready == True, PrintJob.errors == '']  # noqa: E711
-
-            if printer_ids:
-                printer_ids = [id.strip() for id in printer_ids.split(',')]
-                filters += [PrintJob.printer_id.in_(printer_ids)]
-            elif not all:
-                raise HTTPError(400, "You must provide at least one printer ID or set all to true.")
-
-            jobs = session.query(PrintJob).filter(*filters).all()
-
-            if invalidate and not error:
-                raise HTTPError(400, "You must provide an error message to invalidate jobs.")
-
-            results = {}
-
-            for job in jobs:
-                results[job.id] = self._build_job_json_data(job)
-                if invalidate:
-                    if job.errors:
-                        job.errors += "; " + error
-                    else:
-                        job.errors = error
-                else:
-                    job.printed = datetime.utcnow()
-                session.add(job)
-                session.commit()
-
-            return results
-
-
 if c.API_ENABLED:
     register_jsonrpc(AttendeeLookup(), 'attendee')
     register_jsonrpc(AttendeeAccountLookup(), 'attendee_account')
@@ -1739,7 +1359,4 @@ if c.API_ENABLED:
     register_jsonrpc(ConfigLookup(), 'config')
     register_jsonrpc(BarcodeLookup(), 'barcode')
     register_jsonrpc(GuestLookup(), 'guest')
-    register_jsonrpc(MivsLookup(), 'mivs')
     register_jsonrpc(HotelLookup(), 'hotel')
-    register_jsonrpc(ScheduleLookup(), 'schedule')
-    register_jsonrpc(PrintJobLookup(), 'print_job')

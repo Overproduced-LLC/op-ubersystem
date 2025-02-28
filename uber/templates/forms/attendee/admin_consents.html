@@ -8,17 +8,6 @@
             {{ form_macros.form_input(consents.can_spam) }}
         </div>
     </div>
-
-{% if c.ATTRACTIONS_ENABLED %}
-    <div class="col">
-        <div class="form-text">{{ consents.attractions_opt_out.label.text }}</div>
-        <div class="mb-3">
-            {{ consents.attractions_opt_out }}
-            {{ consents.attractions_opt_out.data|yesno("Yes,No") }}
-        </div>
-    </div>
-{% endif %}
-
 </div>
 {% endblock %}
 

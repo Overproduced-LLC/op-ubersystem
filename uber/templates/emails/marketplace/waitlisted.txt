@@ -1,4 +1,0 @@
-{{ app.attendee.first_name }},
-Thank you for applying to be in the Artist Marketplace at {{ c.EVENT_NAME }} this year. Unfortunately, we always have more applicants than spaces, so your application "{{ app.name }}" has been placed on the waitlist. If space becomes available for you, we will notify you via email and you may pay for your space at that time.
-
-{{ c.ARTIST_MARKETPLACE_SIGNATURE }}

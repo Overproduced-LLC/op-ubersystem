@@ -44,9 +44,6 @@ class Group(MagModel, TakesPaymentMixin):
     email_address = Column(UnicodeText)
     phone = Column(UnicodeText)
     website = Column(UnicodeText)
-    wares = Column(UnicodeText)
-    categories = Column(MultiChoice(c.DEALER_WARES_OPTS))
-    categories_text = Column(UnicodeText)
     description = Column(UnicodeText)
     special_needs = Column(UnicodeText)
 
@@ -54,7 +51,6 @@ class Group(MagModel, TakesPaymentMixin):
     auto_recalc = Column(Boolean, default=True, admin_only=True)
 
     can_add = Column(Boolean, default=False, admin_only=True)
-    is_dealer = Column(Boolean, default=False, admin_only=True)
     convert_badges = Column(Boolean, default=False, admin_only=True)
     admin_notes = Column(UnicodeText, admin_only=True)
     status = Column(Choice(c.DEALER_STATUS_OPTS), default=c.UNAPPROVED, admin_only=True)
@@ -72,7 +68,6 @@ class Group(MagModel, TakesPaymentMixin):
         remote_side='Attendee.id',
         single_parent=True)
     leader = relationship('Attendee', foreign_keys=leader_id, post_update=True, cascade='all')
-    studio = relationship('IndieStudio', uselist=False, backref='group', cascade='save-update,merge,refresh-expire,expunge')
     guest = relationship('GuestGroup', backref='group', uselist=False)
     active_receipt = relationship(
         'ModelReceipt',
@@ -95,8 +90,6 @@ class Group(MagModel, TakesPaymentMixin):
             self.cost = 0
         if self.status == c.APPROVED and not self.approved:
             self.approved = datetime.now(UTC)
-        if self.leader and self.is_dealer and self.leader.paid == c.PAID_BY_GROUP:
-            self.leader.ribbon = add_opt(self.leader.ribbon_ints, c.DEALER_RIBBON)
         if not self.is_unpaid or self.orig_value_of('status') != self.status:
             for a in self.attendees:
                 a.presave_adjustments()
@@ -170,16 +163,6 @@ class Group(MagModel, TakesPaymentMixin):
         from uber.models import Session
         if value == '':
             self.shared_with = None
-        elif self.is_dealer and self.status == c.SHARED:
-            with Session() as session:
-                shared_group = session.query(Group).filter(Group.name == value).first()
-                if not shared_group:
-                    raise ValueError(f"Could not find group name {value}.")
-                elif shared_group.status == c.SHARED:
-                    raise ValueError(f"Group {value} is already sharing a table with {shared_group.shared_with.name}."
-                                     "You may want to share this group's table with that group instead.")
-                else:
-                    self.shared_with_id = shared_group.id
     
     @presave_adjustment
     def unshare_table(self):
@@ -229,12 +212,11 @@ class Group(MagModel, TakesPaymentMixin):
 
     @hybrid_property
     def attendees_have_badges(self):
-        return self.is_valid and (not self.is_dealer or self.status in c.DEALER_ACCEPTED_STATUSES)
+        return self.is_valid
 
     @attendees_have_badges.expression
     def attendees_have_badges(cls):
-        return and_(cls.is_valid,
-                    or_(cls.is_dealer == False, cls.status.in_(c.DEALER_ACCEPTED_STATUSES)))  # noqa: E712
+        return and_(cls.is_valid)  # noqa: E712
 
     @property
     def access_sections(self):
@@ -247,22 +229,16 @@ class Group(MagModel, TakesPaymentMixin):
         if self.leader:
             if self.leader.badge_type in [c.STAFF_BADGE, c.CONTRACTOR_BADGE]:
                 section_list.append('shifts_admin')
-            if c.PANELIST_RIBBON in self.leader.ribbon_ints:
-                section_list.append('panels_admin')
-        if self.is_dealer:
-            section_list.append('dealer_admin')
         if self.guest:
             if self.guest.group_type == c.BAND:
                 section_list.append('band_admin')
-            elif self.guest.group_type == c.MIVS:
-                section_list.append('mivs_admin')
             else:
                 section_list.append('guest_admin')
         return section_list
 
     @property
     def new_ribbon(self):
-        return c.DEALER_RIBBON if self.is_dealer else ''
+        return ''
 
     @property
     def ribbon_and_or_badge(self):
@@ -341,7 +317,7 @@ class Group(MagModel, TakesPaymentMixin):
 
     @property
     def new_badge_cost(self):
-        return c.DEALER_BADGE_PRICE if self.is_dealer else c.get_group_price()
+        return c.get_group_price()
 
     @property
     def amount_extra(self):
@@ -365,9 +341,6 @@ class Group(MagModel, TakesPaymentMixin):
 
     @property
     def amount_unpaid(self):
-        if self.is_dealer and self.status not in c.DEALER_ACCEPTED_STATUSES:
-            return 0
-
         if self.registered:
             return max(0, ((self.total_cost * 100) - self.amount_paid) / 100)
         else:
@@ -411,16 +384,6 @@ class Group(MagModel, TakesPaymentMixin):
                                    ModelReceipt.owner_model == "Group")).label('amount_refunded')
 
     @property
-    def dealer_max_badges(self):
-        return c.MAX_DEALERS or math.ceil(self.tables) + 1
-
-    @property
-    def dealer_badges_remaining(self):
-        if self.status != c.APPROVED:
-            return 0
-        return self.dealer_max_badges - self.badges
-
-    @property
     def hours_since_registered(self):
         if not self.registered:
             return 0
@@ -440,11 +403,11 @@ class Group(MagModel, TakesPaymentMixin):
         if not c.PRE_CON:
             return 0
 
-        if not self.auto_recalc or self.is_dealer and not self.dealer_badges_remaining:
+        if not self.auto_recalc:
             return 0
-        elif self.is_dealer or self.can_add:
+        elif self.can_add:
             return 1
-        elif self.guest and self.guest.group_type != c.MIVS:
+        elif self.guest:
             return 0
         else:
             return c.MIN_GROUP_ADDITION
@@ -468,33 +431,4 @@ class Group(MagModel, TakesPaymentMixin):
 
         physical_address = [address1, address2, city_region_zip, country]
         return '\n'.join([s for s in physical_address if s])
-
-    @property
-    def guidebook_header(self):
-        return ''
     
-    @property
-    def guidebook_thumbnail(self):
-        return ''
-
-    @property
-    def guidebook_edit_link(self):
-        return f"../group_admin/form?id={self.id}"
-
-    @property
-    def guidebook_data(self):
-        category_labels = [cat for cat in self.categories_labels if 'Other' not in cat]
-        if self.categories_text:
-            category_labels.append(self.categories_text)
-        return {
-            'guidebook_name': self.name,
-            'guidebook_subtitle': ', '.join(category_labels),
-            'guidebook_desc': self.description,
-            'guidebook_location': '',
-            'guidebook_header': '',
-            'guidebook_thumbnail': '',
-        }
-    
-    @property
-    def guidebook_images(self):
-        return ['', ''], ['', '']

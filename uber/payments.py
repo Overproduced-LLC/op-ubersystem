@@ -54,7 +54,7 @@ class PreregCart:
 
     @classproperty
     def session_keys(cls):
-        return ['paid_preregs', 'unpaid_preregs', 'pending_preregs', 'pending_dealers',
+        return ['paid_preregs', 'unpaid_preregs', 'pending_preregs',
                 'payment_intent_id', 'universal_promo_codes']
 
     @classproperty
@@ -1327,7 +1327,7 @@ class ReceiptManager:
                 count = 1
 
             if isinstance(model, Group):
-                department = c.DEALER_RECEIPT_ITEM if model.is_dealer else c.REG_RECEIPT_ITEM
+                department = c.REG_RECEIPT_ITEM
             else:
                 department = getattr(model, 'department', c.OTHER_RECEIPT_ITEM)
             category = c.OTHER
@@ -1413,7 +1413,7 @@ class ReceiptManager:
             category = maybe_category
 
         if isinstance(model, Group):
-            department = c.DEALER_RECEIPT_ITEM if model.is_dealer else c.REG_RECEIPT_ITEM
+            department = c.REG_RECEIPT_ITEM
         else:
             department = getattr(model, 'department', c.OTHER_RECEIPT_ITEM)
 
@@ -1451,7 +1451,7 @@ class ReceiptManager:
 
     @classmethod
     def auto_update_receipt(self, model, receipt, params, who=''):
-        from uber.models import Attendee, Group, ArtShowApplication, Session
+        from uber.models import Attendee, Group, Session
         if not receipt:
             return []
 
@@ -1459,8 +1459,7 @@ class ReceiptManager:
         new_model = model.__class__(**model.to_dict())
 
         model_overridden_price = getattr(model, 'overridden_price', None)
-        overridden_unset = model_overridden_price and (params.get('no_override') or 
-                                                       isinstance(model, ArtShowApplication) and params.get('overridden_price', None) == '')
+        overridden_unset = model_overridden_price and (params.get('no_override'))
         model_auto_recalc = getattr(model, 'auto_recalc', True) if isinstance(model, Group) else None
         auto_recalc_set = not model_auto_recalc and params.get('auto_recalc', None)
 
@@ -1571,7 +1570,7 @@ class ReceiptManager:
 
     @staticmethod
     def mark_paid_from_ids(intent_id, charge_id):
-        from uber.models import Attendee, ArtShowApplication, Group, ReceiptTransaction, Session
+        from uber.models import Attendee, Group, ReceiptTransaction, Session
         from uber.tasks.email import send_email
         from uber.decorators import render
 
@@ -1617,27 +1616,6 @@ class ReceiptManager:
 
             session.commit()
             session.check_receipt_closed(txn_receipt)
-
-            if model and isinstance(model, Group) and model.is_dealer and not txn.receipt.open_purchase_items:
-                try:
-                    send_email.delay(
-                        c.MARKETPLACE_EMAIL,
-                        c.MARKETPLACE_NOTIFICATIONS_EMAIL,
-                        '{} Payment Completed'.format(c.DEALER_TERM.title()),
-                        render('emails/dealers/payment_notification.txt', {'group': model}, encoding=None),
-                        model=model.to_dict('id'))
-                except Exception:
-                    log.error('Unable to send {} payment confirmation email'.format(c.DEALER_TERM), exc_info=True)
-            if model and isinstance(model, ArtShowApplication) and not txn.receipt.open_purchase_items:
-                try:
-                    send_email.delay(
-                        c.ART_SHOW_EMAIL,
-                        c.ART_SHOW_NOTIFICATIONS_EMAIL,
-                        'Art Show Payment Received',
-                        render('emails/art_show/payment_notification.txt', {'app': model}, encoding=None),
-                        model=model.to_dict('id'))
-                except Exception:
-                    log.error('Unable to send Art Show payment confirmation email', exc_info=True)
 
         session.close()
         return matching_txns

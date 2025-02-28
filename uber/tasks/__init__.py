@@ -56,12 +56,9 @@ def run_startup_tasks(*args, **kwargs):
         fn.delay(*a, **kw)
 
 
-from uber.tasks import attractions  # noqa: F401, E402
 from uber.tasks import email  # noqa: F401, E402
 from uber.tasks import groups  # noqa: F401, E402
 from uber.tasks import health  # noqa: F401, E402
-from uber.tasks import mivs  # noqa: F401, E402
-from uber.tasks import panels  # noqa: F401, E402
 from uber.tasks import redis  # noqa: F401, E402
 from uber.tasks import registration  # noqa: F401, E402
 from uber.tasks import security  # noqa: F401, E402

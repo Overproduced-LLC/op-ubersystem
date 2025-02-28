@@ -238,11 +238,6 @@ class ModelReceipt(MagModel):
     def default_department(self):
         from uber.models import Session, Attendee, Group
         cls = Session.resolve_model(self.owner_model)
-        if cls in [Attendee, Group]:
-            with Session() as session:
-                model = session.query(cls).filter_by(id=self.owner_id).first()
-                if model and model.is_dealer:
-                    return c.DEALER_RECEIPT_ITEM
         return getattr(cls, 'department')
 
     def get_last_incomplete_txn(self):

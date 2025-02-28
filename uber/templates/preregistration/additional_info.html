@@ -15,26 +15,13 @@
 
     {{ form_macros.form_validation('prereg-form', form_list=['PreregOtherInfo'], include_disclaimers_modal=not editing) }}
 
-    {% if is_prereg_dealer %}
-    <div class="text-end">
-      <a href="dealer_registration?edit_id={{ attendee.group_id }}" class="btn btn-outline-primary mt-3">Edit Application</a>
-      <a href="form?dealer_id={{ attendee.group_id }}" class="btn btn-info mt-3">Edit Personal Info</a>
-    </div>
-    {% endif %}
-
     <form novalidate method="post" id="prereg-form" action="additional_info" class="form-horizontal" role="form">
       <input type="hidden" name="is_prereg" value="True" />
-      {% if is_prereg_dealer %}
-      <input type="hidden" name="group_id" value="{{ attendee.group_id }}" />
-      {% else %}
       <input type="hidden" name="attendee_id" value="{{ attendee.id }}" />
-      {% endif %}
       {{ csrf_token() }}
       {% include "forms/attendee/prereg_other_info.html" %}
       &nbsp;
-      {% if is_prereg_dealer %}
-      <button type="submit" class="btn btn-primary mt-3" value="Submit Application">Submit Application</button>
-      {% elif editing %}
+      {% if editing %}
       <button type="submit" class="btn btn-primary mt-3" value="Update">Update</button>
       {% else %}
       <button type="submit" class="btn btn-primary mt-3" value="Add to Cart">Add to Cart</button>

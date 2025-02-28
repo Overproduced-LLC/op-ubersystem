@@ -80,19 +80,6 @@ class MenuItem:
             if sm.name == key:
                 return sm
 
-
-def get_external_schedule_menu_name():
-    if getattr(c, 'ALT_SCHEDULE_URL', ''):
-        try:
-            url = urlparse(c.ALT_SCHEDULE_URL)
-            return 'View External Public Schedule on {}'.format(url.netloc)
-        except Exception:
-            log.warning('Menu: Unable to parse ALT_SCHEDULE_URL: "{}"', c.ALT_SCHEDULE_URL)
-            return 'View External Public Schedule'
-
-    return 'View Public Schedule'
-
-
 c.MENU = MenuItem(name='Root', submenu=[
     MenuItem(name='Admin', submenu=[
         MenuItem(name='Admin Accounts', href='../accounts/'),
@@ -115,17 +102,6 @@ c.MENU = MenuItem(name='Root', submenu=[
 
     MenuItem(name='People', submenu=[
         MenuItem(name='Attendees', href='../registration/'),
-        MenuItem(name='Groups', href='../group_admin/'),
-        MenuItem(name='Dealers', href='../group_admin/#dealers', access_override='dealer_admin'),
-        MenuItem(name='Guests', href='../group_admin/#guests', access_override='guest_admin'),
-        MenuItem(name='Bands', href='../group_admin/#bands', access_override='band_admin'),
-        
-    ]),
-
-    MenuItem(name='Schedule', submenu=[
-        MenuItem(name=get_external_schedule_menu_name(), href='../schedule/'),
-        MenuItem(name='Edit Schedule', href='../schedule/edit'),
-        MenuItem(name='Schedule Changes', href='../schedule_reports/'),
     ]),
 
     MenuItem(name='Statistics', submenu=[
@@ -133,12 +109,6 @@ c.MENU = MenuItem(name='Root', submenu=[
         MenuItem(name='Badges Sold Graph', href='../statistics/badges_sold'),
     ]),
 ])
-
-
-if c.MIVS_ENABLED:
-    c.MENU['People'].append_menu_item(MenuItem(name='MIVS', href='../group_admin/#mivs',
-                                               access_override='mivs_admin'), position=5)
-
 
 if c.GROUPS_ENABLED:
     c.MENU['People'].append_menu_item(MenuItem(name='Promo Code Groups',
@@ -154,25 +124,8 @@ if c.ADMIN_BADGES_NEED_APPROVAL:
     c.MENU['People'].append_menu_item(MenuItem(name='Pending Badges',
                                                href='../registration/pending_badges'), position=1)
 
-
-if c.ATTRACTIONS_ENABLED:
-    c.MENU['Schedule'].append_menu_item(MenuItem(name='Attractions', href='../attractions_admin/'))
-
-
 if c.BADGE_PRINTING_ENABLED:
     c.MENU.append_menu_item(MenuItem(name='Badge Printing', submenu=[
         MenuItem(name='Printed Badges', href='../badge_printing/'),
         MenuItem(name='Print Jobs', href='../badge_printing/print_jobs_list'),
     ]))
-
-if c.BADGE_PRINTING_ENABLED or c.SPIN_TERMINAL_AUTH_KEY:
-    c.MENU['Admin'].append_menu_item(MenuItem(name='Manage Workstations', href='../reg_admin/manage_workstations'))
-
-
-if c.ART_SHOW_ENABLED:
-    c.MENU.append_menu_item(MenuItem(name='Art Show', submenu=[
-        MenuItem(name='Applications', href='../art_show_admin/'),
-        MenuItem(name='Link to Apply', href='../art_show_applications/', access_override='art_show_admin'),
-        MenuItem(name='At-Con Operations', href='../art_show_admin/ops'),
-        MenuItem(name='Reports', href='../art_show_reports/index'),
-        ]))

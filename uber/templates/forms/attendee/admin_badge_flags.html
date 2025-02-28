@@ -25,17 +25,6 @@
     {% endif %}
 </div>
 <div class="row g-sm-3">
-    {% if attendee.panel_applicants and c.HAS_PANELS_ADMIN_ACCESS -%}
-    <div class="col">
-        <div class="form-text">Panel Applications</div>
-        <div class="mb-4">
-            {% for applicant in attendee.panel_applicants -%}
-                {% if not loop.first %} / {% endif %}
-                <a href="../panels_admin/app?id={{ applicant.application.id }}">{{ applicant.application.name }}{{ " (Accepted)" if applicant.application.status == c.ACCEPTED else "" }}</a>
-            {%- endfor %}
-        </div>
-    </div>
-    {%- endif %}
     {% if c.ATTENDEE_ACCOUNTS_ENABLED %}
     <div class="col">
         <div class="form-text">Account Email{{ attendee.managers|length|pluralize }}</div>

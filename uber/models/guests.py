@@ -21,7 +21,7 @@ from uber.utils import filename_extension
 
 __all__ = [
     'GuestGroup', 'GuestInfo', 'GuestBio', 'GuestTaxes', 'GuestStagePlot',
-    'GuestPanel', 'GuestMerch', 'GuestCharity', 'GuestAutograph',
+    'GuestMerch', 'GuestCharity', 'GuestAutograph',
     'GuestInterview', 'GuestTravelPlans', 'GuestDetailedTravelPlan', 'GuestHospitality']
 
 
@@ -42,7 +42,6 @@ class GuestGroup(MagModel):
     bio = relationship('GuestBio', backref=backref('guest', load_on_pending=True), uselist=False)
     taxes = relationship('GuestTaxes', backref=backref('guest', load_on_pending=True), uselist=False)
     stage_plot = relationship('GuestStagePlot', backref=backref('guest', load_on_pending=True), uselist=False)
-    panel = relationship('GuestPanel', backref=backref('guest', load_on_pending=True), uselist=False)
     merch = relationship('GuestMerch', backref=backref('guest', load_on_pending=True), uselist=False)
     charity = relationship('GuestCharity', backref=backref('guest', load_on_pending=True), uselist=False)
     autograph = relationship('GuestAutograph', backref=backref('guest', load_on_pending=True), uselist=False)
@@ -143,12 +142,6 @@ class GuestGroup(MagModel):
         return self.status('merch')
 
     @property
-    def panel_status(self):
-        application_count = len(self.group.leader.submitted_panels)
-        return '{} Panel Application(s)'.format(application_count) \
-            if self.group.leader.submitted_panels else self.status('panel')
-
-    @property
     def mc_status(self):
         return None if self.wants_mc is None else yesno(self.wants_mc, 'Yes,No')
 
@@ -196,44 +189,6 @@ class GuestGroup(MagModel):
         if subclass:
             return getattr(subclass, 'status', getattr(subclass, 'id'))
         return ''
-    
-    @property
-    def guidebook_header(self):
-        # Temp: we need real header/thumbnail images later
-        if self.bio:
-            return self.bio
-        return ''
-
-    @property
-    def guidebook_thumbnail(self):
-        if self.bio:
-            return self.bio
-        return ''
-    
-    @property
-    def guidebook_edit_link(self):
-        return f"../guests/bio?guest_id={self.id}"
-    
-    @property
-    def guidebook_data(self):
-        return {
-            'guidebook_name': self.group.name if self.group else '',
-            'guidebook_subtitle': self.group_type_label,
-            'guidebook_desc': self.bio.desc if self.bio else '',
-            'guidebook_location': '',
-            'guidebook_header': self.guidebook_images[0][0],
-            'guidebook_thumbnail': self.guidebook_images[0][1],
-        }
-
-    @property
-    def guidebook_images(self):
-        if not self.bio or not self.bio.pic_filename:
-            return ['', ''], ['', '']
-
-        prepend = sluggify(self.group.name) + '_'
-
-        return [prepend + self.bio.pic_filename, prepend + self.bio.pic_filename], [self.bio, self.bio]
-
 
 class GuestInfo(MagModel):
     guest_id = Column(UUID, ForeignKey('guest_group.id'), unique=True)
@@ -335,21 +290,6 @@ class GuestStagePlot(MagModel):
     @property
     def status(self):
         return self.url if self.url else ''
-
-
-class GuestPanel(MagModel):
-    guest_id = Column(UUID, ForeignKey('guest_group.id'), unique=True)
-    wants_panel = Column(Choice(c.GUEST_PANEL_OPTS), nullable=True)
-    name = Column(UnicodeText)
-    length = Column(UnicodeText)
-    desc = Column(UnicodeText)
-    tech_needs = Column(MultiChoice(c.TECH_NEED_OPTS))
-    other_tech_needs = Column(UnicodeText)
-
-    @property
-    def status(self):
-        return self.wants_panel_label
-
 
 class GuestMerch(MagModel):
     _inventory_file_regex = re.compile(r'^(audio|image)(|\-\d+)$')

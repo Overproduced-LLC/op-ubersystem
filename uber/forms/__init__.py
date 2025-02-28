@@ -382,7 +382,7 @@ class AddressForm():
 
         optional_list = super().get_optional_fields(model, is_admin)
 
-        if not c.COLLECT_FULL_ADDRESS and (not isinstance(model, Group) or not model.is_dealer):
+        if not c.COLLECT_FULL_ADDRESS and (not isinstance(model, Group)):
             optional_list.extend(['address1', 'city', 'region', 'region_us', 'region_canada', 'country'])
             if getattr(model, 'international', None) or c.AT_OR_POST_CON:
                 optional_list.append('zip_code')
@@ -468,6 +468,5 @@ class DictWrapper(dict):
 
 from uber.forms.attendee import *  # noqa: F401,E402,F403
 from uber.forms.group import *  # noqa: F401,E402,F403
-from uber.forms.artist_marketplace import *  # noqa: F401,E402,F403
 from uber.forms.security import *  # noqa: F401,E402,F403
 from uber.forms.hotel_lottery import *  # noqa: F401,E402,F403

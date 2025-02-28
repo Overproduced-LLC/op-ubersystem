@@ -777,10 +777,6 @@ def restricted(func):
             else:
                 ajax_or_redirect(func, '../accounts/login?message=', "You are not logged in.", True)
 
-        elif '/mivs_judging/' in c.PAGE_PATH:
-            if not uber.models.AdminAccount.is_mivs_judge_or_admin:
-                return f'You need to be a MIVS Judge or have access to {c.PAGE_PATH}'
-
         elif getattr(func, 'any_admin_access', None):
             with uber.models.Session() as session:
                 account = session.admin_account(cherrypy.session.get('account_id'))

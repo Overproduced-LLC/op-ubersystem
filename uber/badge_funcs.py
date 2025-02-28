@@ -49,7 +49,7 @@ def get_badge_type(badge_num):
 
 
 def get_real_badge_type(badge_type):
-    return c.ATTENDEE_BADGE if badge_type in [c.PSEUDO_DEALER_BADGE, c.PSEUDO_GROUP_BADGE] else badge_type
+    return c.ATTENDEE_BADGE if badge_type in [c.PSEUDO_GROUP_BADGE] else badge_type
 # TODO: perhaps a check_leaderless() for checking for leaderless groups, since those don't get emails
 
 

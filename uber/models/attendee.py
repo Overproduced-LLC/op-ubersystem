@@ -394,55 +394,13 @@ class Attendee(MagModel, TakesPaymentMixin):
     old_mpoint_exchanges = relationship('OldMPointExchange', backref='attendee')
     dept_checklist_items = relationship('DeptChecklistItem', backref=backref('attendee', lazy='subquery'))
 
-    indie_developer = relationship(
-        'IndieDeveloper', backref=backref('attendee', load_on_pending=True), uselist=False)
-
     hotel_eligible = Column(Boolean, default=False, admin_only=True)
     hotel_requests = relationship('HotelRequests', backref=backref('attendee', load_on_pending=True), uselist=False)
     room_assignments = relationship('RoomAssignment', backref=backref('attendee', load_on_pending=True))
 
     # The PIN/password used by third party hotel reservation systems
     hotel_pin = SQLAlchemyColumn(UnicodeText, nullable=True, unique=True)
-
-    # =========================
-    # mits
-    # =========================
-    mits_applicants = relationship('MITSApplicant', backref='attendee')
-
-    # =========================
-    # panels
-    # =========================
-    assigned_panelists = relationship('AssignedPanelist', backref='attendee')
-    panel_applicants = relationship('PanelApplicant', backref='attendee', cascade='save-update,merge,refresh-expire,expunge')
-    panel_applications = relationship('PanelApplication', backref='poc')
-    panel_feedback = relationship('EventFeedback', backref='attendee')
-    submitted_panels = relationship(
-        'PanelApplication',
-        secondary='panel_applicant',
-        secondaryjoin='and_(PanelApplicant.app_id == PanelApplication.id)',
-        primaryjoin='and_(Attendee.id == PanelApplicant.attendee_id, PanelApplicant.submitter == True)',
-        viewonly=True
-        )
-
-    # =========================
-    # attractions
-    # =========================
-    _NOTIFICATION_EMAIL = 0
-    _NOTIFICATION_TEXT = 1
-    _NOTIFICATION_NONE = 2
-    _NOTIFICATION_PREF_OPTS = [
-        (_NOTIFICATION_EMAIL, 'Email'),
-        (_NOTIFICATION_TEXT, 'Text'),
-        (_NOTIFICATION_NONE, 'None')]
-
-    notification_pref = Column(Choice(_NOTIFICATION_PREF_OPTS), default=_NOTIFICATION_EMAIL)
-    attractions_opt_out = Column(Boolean, default=False)
-
-    attraction_signups = relationship('AttractionSignup', backref='attendee', order_by='AttractionSignup.signup_time')
-    attraction_event_signups = association_proxy('attraction_signups', 'event')
-    attraction_notifications = relationship(
-        'AttractionNotification', backref='attendee', order_by='AttractionNotification.sent_time')
-
+    
     # =========================
     # tabletop
     # =========================
@@ -453,21 +411,6 @@ class Attendee(MagModel, TakesPaymentMixin):
     # badge printing
     # =========================
     print_requests = relationship('PrintJob', backref='attendee', order_by='desc(PrintJob.last_updated)')
-
-    # =========================
-    # art show
-    # =========================
-    art_show_bidder = relationship('ArtShowBidder', backref=backref('attendee', load_on_pending=True), uselist=False)
-    art_show_purchases = relationship(
-        'ArtShowPiece',
-        backref='buyer',
-        cascade='save-update,merge,refresh-expire,expunge',
-        secondary='art_show_receipt')
-    art_agent_apps = relationship(
-        'ArtShowApplication',
-        backref='agents',
-        secondary='art_show_agent_code',
-        viewonly=True)
 
     _attendee_table_args = [
         Index('ix_attendee_paid_group_id', paid, group_id),
@@ -482,7 +425,6 @@ class Attendee(MagModel, TakesPaymentMixin):
     def to_dict(self, *args, **kwargs):
         # Kludgey fix for SQLAlchemy breaking our stuff
         d = super().to_dict(*args, **kwargs)
-        d.pop('attraction_event_signups', None)
         d.pop('receipt_changes', None)
         return d
 
@@ -535,17 +477,9 @@ class Attendee(MagModel, TakesPaymentMixin):
         if self.group and self.paid == c.PAID_BY_GROUP and self.has_or_will_have_badge:
             if not self.group.is_valid:
                 self.badge_status = c.INVALID_GROUP_STATUS
-            elif self.group.is_dealer and self.group.status not in c.DEALER_ACCEPTED_STATUSES:
-                self.badge_status = c.UNAPPROVED_DEALER_STATUS
 
         if self.badge_status == c.INVALID_GROUP_STATUS and (
                 not self.group or self.group.is_valid or self.paid != c.PAID_BY_GROUP):
-            self.badge_status = c.NEW_STATUS
-
-        if self.badge_status == c.UNAPPROVED_DEALER_STATUS and (not self.group or
-                                                                not self.group.is_dealer or
-                                                                self.paid != c.PAID_BY_GROUP or
-                                                                self.group.status in c.DEALER_ACCEPTED_STATUSES):
             self.badge_status = c.NEW_STATUS
 
         if self.badge_status == c.WATCHED_STATUS and not self.banned:
@@ -608,9 +542,6 @@ class Attendee(MagModel, TakesPaymentMixin):
     def _badge_adjustments(self):
         from uber.badge_funcs import needs_badge_num
         from uber.tasks.registration import assign_badge_num
-
-        if self.badge_type == c.PSEUDO_DEALER_BADGE:
-            self.ribbon = add_opt(self.ribbon_ints, c.DEALER_RIBBON)
 
         self.badge_type = self.badge_type_real
 
@@ -768,24 +699,9 @@ class Attendee(MagModel, TakesPaymentMixin):
         section_list = []
         if self.staffing_or_will_be:
             section_list.append('shifts_admin')
-        if (self.group and self.group.guest and self.group.guest.group_type == c.BAND) \
-                or (self.badge_type == c.GUEST_BADGE and c.BAND in self.ribbon_ints):
-            section_list.append('band_admin')
-        if (self.group and self.group.guest and self.group.guest.group_type not in [c.BAND, c.MIVS]) \
+        if (self.group and self.group.guest and self.group.guest.group_type not in [c.BAND]) \
                 or (self.badge_type == c.GUEST_BADGE and c.BAND not in self.ribbon_ints):
             section_list.append('guest_admin')
-        if c.PANELIST_RIBBON in self.ribbon_ints:
-            section_list.append('panels_admin')
-        if self.is_dealer:
-            section_list.append('dealer_admin')
-        if self.mits_applicants:
-            section_list.append('mits_admin')
-        if self.group and self.group.guest and self.group.guest.group_type == c.MIVS:
-            section_list.append('mivs_admin')
-        if self.art_show_applications or self.art_show_bidder or self.art_show_purchases or self.art_agent_apps:
-            section_list.append('art_show_admin')
-        if self.marketplace_application:
-            section_list.append('marketplace_admin')
         if self.lottery_application:
             section_list.append('hotel_lottery_admin')
         return section_list
@@ -880,8 +796,6 @@ class Attendee(MagModel, TakesPaymentMixin):
             return 0
         elif self.overridden_price is not None and include_price_override:
             return self.overridden_price
-        elif self.is_dealer:
-            return c.DEALER_BADGE_PRICE
         elif self.promo_code_groups or (self.group and self.group.auto_recalc and self.paid == c.PAID_BY_GROUP):
             return c.get_group_price()
         else:
@@ -913,7 +827,7 @@ class Attendee(MagModel, TakesPaymentMixin):
     @property
     def qualifies_for_discounts(self):
         return not self.promo_code and self.paid != c.NEED_NOT_PAY and self.overridden_price is None \
-            and not self.is_dealer and self.badge_type not in c.BADGE_TYPE_PRICES
+            and self.badge_type not in c.BADGE_TYPE_PRICES
 
     @property
     def in_free_group(self):
@@ -928,9 +842,7 @@ class Attendee(MagModel, TakesPaymentMixin):
         # What this badge would cost if it were new, i.e., not taking into
         # account special overrides or upgrades
         registered = self.registered_local if self.registered else uber.utils.localized_now()
-        if self.is_dealer:
-            return c.DEALER_BADGE_PRICE
-        elif self.badge_type == c.ONE_DAY_BADGE:
+        if self.badge_type == c.ONE_DAY_BADGE:
             return c.get_oneday_price(registered)
         elif self.is_presold_oneday:
             return c.get_presold_oneday_price(self.badge_type)
@@ -1092,12 +1004,12 @@ class Attendee(MagModel, TakesPaymentMixin):
 
     @hybrid_property
     def has_or_will_have_badge(self):
-        return self.is_valid and self.badge_status not in [c.NOT_ATTENDING, c.UNAPPROVED_DEALER_STATUS]
+        return self.is_valid and self.badge_status not in [c.NOT_ATTENDING]
 
     @has_or_will_have_badge.expression
     def has_or_will_have_badge(cls):
         return and_(cls.is_valid,
-                    not_(cls.badge_status.in_([c.NOT_ATTENDING, c.UNAPPROVED_DEALER_STATUS])
+                    not_(cls.badge_status.in_([c.NOT_ATTENDING])
                          ))
 
     @hybrid_property
@@ -1117,21 +1029,6 @@ class Attendee(MagModel, TakesPaymentMixin):
     def staffing_or_will_be(self):
         # This is for use in our model checks -- it includes attendees who are going to be marked staffing
         return self.staffing or self.volunteering_badge_or_ribbon
-
-    @hybrid_property
-    def is_dealer(self):
-        return c.DEALER_RIBBON in self.ribbon_ints or self.badge_type == c.PSEUDO_DEALER_BADGE or (
-            self.group and self.group.is_dealer and self.paid == c.PAID_BY_GROUP)
-
-    @is_dealer.expression
-    def is_dealer(cls):
-        return or_(
-            cls.ribbon.like('%{}%'.format(c.DEALER_RIBBON)),
-            and_(
-                cls.paid == c.PAID_BY_GROUP,
-                exists().select_from(Group).where(
-                    and_(cls.group_id == Group.id,
-                         Group.is_dealer == True))))  # noqa: E712
 
     @property
     def is_checklist_admin(self):
@@ -1173,10 +1070,6 @@ class Attendee(MagModel, TakesPaymentMixin):
 
         if self.badge_status not in [c.COMPLETED_STATUS, c.NEW_STATUS]:
             return "Badge status is {}".format(self.badge_status_label)
-
-        if self.group and self.paid == c.PAID_BY_GROUP and self.group.is_dealer \
-                and self.group.status not in c.DEALER_ACCEPTED_STATUSES:
-            return "Unapproved dealer"
 
         if self.group and self.paid == c.PAID_BY_GROUP and self.group.amount_unpaid:
             return "Unpaid group"
@@ -1375,9 +1268,7 @@ class Attendee(MagModel, TakesPaymentMixin):
 
     @property
     def gets_emails(self):
-        return self.badge_status in [c.NEW_STATUS, c.COMPLETED_STATUS] and (
-                                    not self.is_dealer or self.group and
-                                    self.group.status not in [c.DECLINED, c.CANCELLED])
+        return self.badge_status in [c.NEW_STATUS, c.COMPLETED_STATUS]
 
     @property
     def watchlist_guess(self):
@@ -1524,7 +1415,7 @@ class Attendee(MagModel, TakesPaymentMixin):
     def donation_swag(self):
         donation_items = [
             desc for amount, desc in sorted(c.DONATION_TIERS.items()) if amount and self.amount_extra >= amount]
-        extra_donations = ['Extra donation of ${}'.format(self.extra_donation)] if self.extra_donation else []
+        extra_donations = ['Extra payment of ${}'.format(self.extra_donation)] if self.extra_donation else []
         return donation_items + extra_donations
 
     @property
@@ -2250,70 +2141,6 @@ class Attendee(MagModel, TakesPaymentMixin):
         return self.last_name
 
     # =========================
-    # attractions
-    # =========================
-
-    @property
-    def attraction_features(self):
-        return list({e.feature for e in self.attraction_events})
-
-    @property
-    def attractions(self):
-        return list({e.feature.attraction for e in self.attraction_events})
-    
-    @property
-    def name_and_badge_info(self):
-        return f'{self.badge_or_masked_name} ({self.badge})'
-
-    @property
-    def badge_or_masked_name(self):
-        return self.badge_printed_name or self.masked_name
-    
-    @property
-    def logged_in_name(self):
-        return self.full_name
-
-    @property
-    def masked_name(self):
-        return self.first_name + ' ' + (self.last_name[0] if self.last_name else '?') + '.'
-
-    @property
-    def masked_email(self):
-        name, _, domain = self.email.partition('@')
-        sub_domain, _, tld = domain.rpartition('.')
-        return '{}@{}.{}'.format(mask_string(name), mask_string(sub_domain), tld)
-
-    @property
-    def masked_cellphone(self):
-        cellphone = RE_NONDIGIT.sub(' ', self.cellphone).strip()
-        digits = cellphone.replace(' ', '')
-        return '*' * (len(cellphone) - 4) + digits[-4:]
-
-    @property
-    def masked_notification_pref(self):
-        if self.notification_pref == self._NOTIFICATION_EMAIL:
-            return self.masked_email
-        elif self.notification_pref == self._NOTIFICATION_TEXT:
-            return self.masked_cellphone or self.masked_email
-        return ''
-
-    @property
-    def signups_by_attraction_by_feature(self):
-        signups = sorted(self.attraction_signups, key=lambda s: (s.event.feature.attraction.name, s.event.feature.name))
-        return groupify(signups, [lambda s: s.event.feature.attraction, lambda s: s.event.feature])
-
-    def is_signed_up_for_attraction(self, attraction):
-        return attraction in self.attractions
-
-    def is_signed_up_for_attraction_feature(self, feature):
-        return feature in self.attraction_features
-
-    def can_admin_attraction(self, attraction):
-        if not self.admin_account:
-            return False
-        return self.admin_account.id == attraction.owner_id or self.can_admin_dept_for(attraction.department_id)
-
-    # =========================
     # guests
     # =========================
 
@@ -2372,10 +2199,6 @@ class AttendeeAccount(MagModel):
         if c.SSO_EMAIL_DOMAINS:
             local, domain = normalize_email(self.email, split_address=True)
             return domain in c.SSO_EMAIL_DOMAINS
-
-    @property
-    def has_dealer(self):
-        return any([a.is_dealer for a in self.valid_attendees])
 
     @property
     def hotel_eligible_attendees(self):

@@ -44,25 +44,4 @@
     </a>
   </li>
 {% endfor %}
-{% for art_show_app in attendee.art_show_applications %}
-  <li class="nav-item{% if 'art_show_applications' in c.PAGE_PATH and not bootstrap5 %} active{% endif %}" role="presentation">
-    <a href="../art_show_applications/edit?id={{ art_show_app.id }}" class="nav-link{% if 'art_show_applications' in c.PAGE_PATH %} active{% endif %}">
-      <i class="fa fa-picture"></i> Art Show Application{% if art_show_app.display_name != art_show_app.attendee.full_name %} ({{ art_show_app.display_name }}){% endif %}
-    </a>
-  </li>
-{% endfor %}
-{% if attendee.marketplace_application %}
-  <li class="nav-item" role="presentation">
-    <a href="../marketplace/edit?id={{ attendee.marketplace_application.id }}" class="nav-link{% if 'marketplace' in c.PAGE_PATH %} active{% endif %}">
-      <i class="fa fa-shopping-cart"></i> Marketplace Application
-    </a>
-  </li>
-{% endif %}
-{% if c.ATTRACTIONS_ENABLED and attractions %}
-  <li class="nav-item" role="presentation">
-    <a href="../attractions/manage?id={{ attendee.id }}" class="nav-link{% if 'manage' in c.PAGE_PATH %} active{% endif %}">
-      <span class="bling-icon"></span> Attraction Signups
-    </a>
-  </li>
-{% endif %}
 </ul>

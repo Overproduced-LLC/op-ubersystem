@@ -26,10 +26,6 @@
     Registration Information
   </div>
   <div class="card-body">
-    {% if (c.ATTRACTIONS_ENABLED and attractions) or attendee.promo_code_groups or attendee.art_show_applications or attendee.marketplace_application or attendee.is_group_leader %}
-      {% include 'confirm_tabs.html' with context %}
-    {% endif %}
-
       {% if attendee.badge_status == c.PENDING_STATUS and attendee.paid == c.PENDING and attendee.transfer_code %}
       <div class="alert alert-warning" role="alert">
         <p><strong>You do not yet have a valid registration for {{ c.EVENT_NAME }}.</strong></p>
@@ -91,10 +87,6 @@
             {% set group_link = '' if attendee.is_group_leader else attendee.group.name %}
             <p>Your {{ c.DEALER_APP_TERM }} {% if attendee.is_group_leader %}"<a href="group_members?id={{ attendee.group.id }}" target="_blank">{{ attendee.group.name }}</a>"{% else %}{{ attendee.group.name }}{% endif %}
             is currently {{ attendee.group.status_label }}.</p>
-            {% if c.AFTER_MARKETPLACE_REG_START and c.BEFORE_MARKETPLACE_DEADLINE and attendee.group.status not in [c.APPROVED, c.SHARED, c.CANCELLED] and attendee.is_group_leader %}
-            <p>If you would like, you may instead
-            <a href="../marketplace/index?attendee_id={{ attendee.id }}" target="_blank">apply for a table in the Marketplace.</a></p>
-            {% endif %}
             {% if attendee.group.status not in [c.APPROVED, c.SHARED, c.UNAPPROVED] and attendee.paid == c.PAID_BY_GROUP and c.DEALER_BADGE_PRICE == c.INITIAL_ATTENDEE %}
             <p>If you'd like to attend the event regardless of your group's status, you can purchase your badge now by clicking the button below.</p>
             <p><a class="btn btn-success" href="../preregistration/purchase_dealer_badge?id={{ attendee.id }}">Purchase Badge Now</a></p>

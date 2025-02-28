@@ -54,8 +54,6 @@
             <tr>
             <th>Status</th>
             <th>Registration</th>
-            <th>Art Show</th>
-            <th>Marketplace</th>
             <th>Badge #</th>
             <th>Paid</th>
             <th>Reassign</th>
@@ -68,20 +66,6 @@
             <td data-order="{{ attendee.full_name }}" data-search="{{ attendee.full_name }}">
                 {{ attendee|form_link(true) }}
                 {% if attendee.group %}({{ attendee.group|form_link(true) }}){% endif %}
-            </td>
-            <td>
-                {% for app in attendee.art_show_applications %}
-                <a href="../art_show_admin/form?id={{ app.id }}" target="_blank">View Application</a>
-                {% else %}
-                    N/A
-                {% endfor %}
-            </td>
-            <td>
-                {% if attendee.marketplace_application %}
-                <a href="../marketplace_admin/form?id={{ attendee.marketplace_application.id }}" target="_blank">View Application</a>
-                {% else %}
-                    N/A
-                {% endif %}
             </td>
             <td>
                 {{ attendee.badge_num }}

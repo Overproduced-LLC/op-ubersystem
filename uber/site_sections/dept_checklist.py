@@ -274,11 +274,6 @@ class Root:
                                       'Treasury checklist data uploaded')
 
     @department_id_adapter
-    def guidebook_schedule(self, session, department_id=None, submitted=None, csrf_token=None):
-        return _submit_checklist_item(session, department_id, submitted, csrf_token, 'guidebook_schedule',
-                                      'Thanks for confirming your schedule is ready for Guidebook!')
-
-    @department_id_adapter
     def hotel_eligible(self, session, department_id=None):
         redirect_to_allowed_dept(session, department_id, 'hotel_eligible')
 

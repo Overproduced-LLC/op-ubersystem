@@ -48,7 +48,6 @@ class AdminAccount(MagModel):
                     'AdminAccount.id == ApiToken.admin_account_id, '
                     'ApiToken.revoked_time == None)')
 
-    judge = relationship('IndieJudge', uselist=False, backref='admin_account')
     print_requests = relationship('PrintJob', backref='admin_account',
                                   cascade='save-update,merge,refresh-expire,expunge')
     api_jobs = relationship('ApiJob', backref='admin_account', cascade='save-update,merge,refresh-expire,expunge')
@@ -174,17 +173,6 @@ class AdminAccount(MagModel):
         return 'devtools' in self.write_access_set
 
     @property
-    def is_mivs_judge_or_admin(self, id=None):
-        try:
-            from uber.models import Session
-            with Session() as session:
-                id = id or cherrypy.session.get('account_id')
-                admin_account = session.admin_account(id)
-                return admin_account.judge or 'mivs_judging' in admin_account.read_or_write_access_set
-        except Exception:
-            return None
-
-    @property
     def api_read(self):
         return any([group.has_any_access('api', read_only=True) for group in self.access_groups])
 
@@ -211,10 +199,6 @@ class AdminAccount(MagModel):
     @property
     def full_dept_checklist_admin(self):
         return any([group.has_full_access('dept_checklist') for group in self.access_groups])
-
-    @property
-    def full_attractions_admin(self):
-        return any([group.has_full_access('attractions_admin') for group in self.access_groups])
 
     @property
     def full_email_admin(self):
