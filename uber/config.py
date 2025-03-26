@@ -489,16 +489,6 @@ class Config(_Overridable):
     @property
     def FORMATTED_ROOM_TYPES(self):
         room_types = []
-        print("ROOM TYPES")
-        print(c.ROOM_TYPES)
-        print("ROOM TYPE OPTS")
-        print(c.ROOM_TYPE_OPTS)
-        print("ROOM TYPE PRICES")
-        print(c.ROOM_TYPE_PRICES)
-        print("ROOM TYPE PRICES DOUBLE")
-        print(c.ROOM_TYPE_PRICES_DOUBLE)
-        print("ROOM TYPE DESCRIPTIONS")
-        print(c.ROOM_TYPE_DESCRIPTIONS)
         for _room_type_id, _room_type in c.ROOM_TYPE_OPTS:
             room_types.append({
                 'name': _room_type,
@@ -509,9 +499,6 @@ class Config(_Overridable):
                 'distance': c.ROOM_TYPE_DESCRIPTIONS[_room_type_id]['distance'],
                 'value': _room_type_id,
             })
-        print('ROOM TYPES')
-        print(room_types)
-        print('END ROOM TYPES')
         return room_types
             
     @property
@@ -1343,9 +1330,6 @@ def parse_config(plugin_name, module_dir):
 
 c = Config()
 _config = parse_config("uber", pathlib.Path("/app/uber"))  # outside this module, we use the above c global instead of using this directly
-# Export config to file for debugging
-with open('/app/uber/config.json', 'w') as f:
-    json.dump(_config, f, indent=2)
 db_connection_string = os.environ.get('DB_CONNECTION_STRING')
 
 for conf, val in _config['secret'].items():
