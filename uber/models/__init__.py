@@ -614,8 +614,6 @@ from uber.models.tracking import *  # noqa: F401,E402,F403
 from uber.models.types import *  # noqa: F401,E402,F403
 from uber.models.api import *  # noqa: F401,E402,F403
 from uber.models.hotel import *  # noqa: F401,E402,F403
-from uber.models.tabletop import *  # noqa: F401,E402,F403
-from uber.models.guests import *  # noqa: F401,E402,F403
 
 # Explicitly import models used by the Session class to quiet flake8
 from uber.models.admin import AccessGroup, AdminAccount, WatchList, WorkstationAssignment  # noqa: E402
@@ -625,7 +623,6 @@ from uber.models.commerce import ModelReceipt  # noqa: E402
 from uber.models.department import Job, Shift, Department, DeptRole  # noqa: E402
 from uber.models.email import Email  # noqa: E402
 from uber.models.group import Group  # noqa: E402
-from uber.models.guests import GuestGroup  # noqa: E402
 from uber.models.hotel import LotteryApplication
 from uber.models.promo_code import PromoCode, PromoCodeGroup  # noqa: E402
 from uber.models.tracking import Tracking  # noqa: E402
@@ -799,10 +796,6 @@ class Session(SessionManager):
                                            admin.attendee.dept_memberships_with_inherent_role]
             return set(staffer.assigned_depts_ids).intersection(dept_ids_with_inherent_role)
 
-        def admin_can_see_guest_group(self, guest):
-            return guest.group_type_label.upper().replace(' ', '_') \
-                in self.current_admin_account().viewable_guest_group_types
-
         def admin_attendee_max_access(self, attendee, read_only=True):
             admin = self.current_admin_account()
             if not admin:
@@ -830,7 +823,7 @@ class Session(SessionManager):
                                                    read_only=read_only) for section in group.access_sections])
 
         def viewable_groups(self):
-            from uber.models import Group, GuestGroup
+            from uber.models import Group
             admin = self.current_admin_account()
 
             if admin.full_registration_admin:
@@ -841,11 +834,6 @@ class Session(SessionManager):
             group_id = admin.attendee.group.id if admin.attendee.group else ''
             if group_id:
                 subqueries.append(self.query(Group).filter(Group.id == group_id))
-
-            if 'guest_admin' in admin.read_or_write_access_set:
-                subqueries.append(self.query(Group).join(
-                    GuestGroup, Group.id == GuestGroup.group_id).filter(
-                        ~GuestGroup.group_type.in_([c.BAND])))
 
             if 'shifts_admin' in admin.read_or_write_access_set:
                 subqueries.append(self.query(Group).join(Group.leader).filter(
@@ -868,14 +856,6 @@ class Session(SessionManager):
             admin = self.current_admin_account()
             return_dict = {'created': self.query(Attendee).filter(
                 or_(Attendee.creator == admin.attendee, Attendee.id == admin.attendee.id))}
-            
-            return_dict['guest_admin'] = self.query(Attendee).outerjoin(Group, Attendee.group_id == Group.id).join(
-                GuestGroup, Group.id == GuestGroup.group_id).filter(Attendee.badge_type == c.GUEST_BADGE,
-                        and_(
-                            Attendee.group_id != None,
-                            Group.id == Attendee.group_id,
-                            GuestGroup.group_id == Group.id,
-                            ~GuestGroup.group_type.in_([c.BAND])))
             
             return_dict['hotel_lottery_admin'] = self.query(Attendee).join(LotteryApplication)
             return return_dict
@@ -1241,20 +1221,6 @@ class Session(SessionManager):
                        'for that badge!'
 
             return attendee, message
-
-        def attendee_from_art_show_app(self, **params):
-            attendee, message = self.create_or_find_attendee_by_id(**params)
-            if message:
-                return attendee, message
-            elif attendee.art_show_applications:
-                return attendee, \
-                    'There is already an art show application ' \
-                    'for that badge!'
-
-            if params.get('not_attending', ''):
-                attendee.badge_status = c.NOT_ATTENDING
-
-            return attendee, ''
 
         def add_promo_code_to_attendee(self, attendee, code, used_codes=defaultdict(int)):
             """

@@ -33,15 +33,6 @@
 
       <p>If you have any questions then please contact us via <a href='{{ c.CONTACT_URL }}'>{{ c.CONTACT_URL }}</a>.</p>
 
-      {% if duplicate.group and duplicate.group.is_dealer and duplicate.group.status not in c.DEALER_ACCEPTED_STATUSES %}
-        <p>
-          It looks like your {{ c.DEALER_REG_TERM }} application has not been approved yet. If your application
-          is not approved, you will be able to purchase badges for yourself and the number of assistants on the application
-          at the pre-registration price of {{ duplicate.badge_cost|format_currency }} when the waitlist is exhausted. You will receive an email
-          when these badges are available for purchase.
-        </p>
-      {% endif %}
-
       {% if duplicate.badge_type == c.STAFF_BADGE and duplicate.registered == [c.PREREG_OPEN, c.DEALER_REG_START]|min %}
         <p>
           You were registered automatically for a complimentary Staff badge as thanks for volunteering
@@ -117,6 +108,7 @@
       {% endif %}
 
       {% include "forms/attendee/personal_info.html" %}
+      {% include "forms/attendee/lodging_info.html" %}
       {% include "forms/attendee/staffing_info.html" %}
       {% include "forms/attendee/other_info.html" %}
       {% include "forms/attendee/consents.html" %}

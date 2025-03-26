@@ -70,10 +70,6 @@ class PreregCart:
         return cherrypy.session.setdefault('pending_preregs', OrderedDict())
 
     @classproperty
-    def pending_dealers(cls):
-        return cherrypy.session.setdefault('pending_dealers', OrderedDict())
-
-    @classproperty
     def payment_intent_id(cls):
         return cherrypy.session.get('payment_intent_id', '')
 
@@ -1605,6 +1601,9 @@ class ReceiptManager:
                     model.badge_status = c.NEW_STATUS
                 if model.paid in [c.NOT_PAID, c.PENDING]:
                     model.paid = c.HAS_PAID
+                if model.lodging_paid in [c.NOT_PAID, c.PENDING]:
+                    model.lodging_paid = c.HAS_PAID
+                    
             if isinstance(model, Group) and model.is_paid:
                 for attendee in model.attendees:
                     if attendee.paid == c.PAID_BY_GROUP and attendee.badge_status == c.NEW_STATUS and \

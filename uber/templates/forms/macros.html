@@ -295,6 +295,121 @@
 </script>
 {%- endmacro %}
 
+
+{% macro lodging_card_select(target_field, opts, text_class="text-center", help_text="", disabled_opts=[], target_field_id="", disabled_card_text="Sold Out") %}
+{# 
+    A set of card elements generated from opts. Each item in opts should include the following fields:
+        name (str): The title displayed at the top of the card.
+        desc (str): A short description of the card. Will be rendered as HTML.
+        value (str): The value the card should set on the target_field when clicked.
+        price (optional str): A price to display below the title.
+        icon (optional str): The path for an icon for the card, e.g., ../static/icons/sponsor.png
+        link (optional str): The path for a template. If present, a "Read more" link is added to the card that opens that template in a pop-up.
+
+    Note that transform: rotate(0) is used to contain our stretched links to the desired element.
+    Don't change it or the "Read More" links won't work.
+#}
+
+{% set is_preview = 'landing' in c.PAGE_PATH %}
+{% set read_only = locked_fields|default(None, true) and target_field.name in locked_fields and not upgrade_modal %}
+{% set label_required = kwargs['required'] if 'required' in kwargs else target_field.flags.required %}
+{% set field_id = target_field_id or target_field.id %}
+{% set show_desc = not admin_area and not is_preview and (help_text or target_field.description) %}
+
+{% if is_preview %}
+<strong>The following room types are currently available:</strong>
+{% else %}
+<fieldset>
+  <legend class="mt-3 mb-0 form-text">
+    {{ kwargs['label'] if 'label' in kwargs else target_field.label.text }}{% if label_required %}<span class="required-indicator text-danger"> *</span>{% endif %}
+  </legend>
+{% endif %}
+<div class="card-group mt-0{% if not show_desc %} mb-3{% endif %}">
+{% for opt in opts %}
+{% set disabled_card = opt.value in disabled_opts %}
+  <div class="card {{ target_field.name }}_card {{ text_class }}{% if disabled_card %} disabled-card bg-secondary text-white{% endif %}" style="max-width: 18rem;">
+      <div class="card-header" style="transform: rotate(0);">
+          <label for="{{ field_id }}-{{ opt.value }}" class="h5 card-title mb-0 text-nowrap">
+            {% if disabled_card or is_preview or read_only %}
+            {{ opt.name }}{% if opt.price and opt.price|int %}: {{ opt.price|format_currency }}{% endif %}{% if opt.price_double and opt.price_double|int %} - {{ opt.price_double|format_currency }}{% endif %}
+            {% else %}
+              <a href="#" class="card-link stretched-link text-reset text-decoration-none {{ target_field.name }}_card_link"
+                data-value="{{ opt.value }}">
+                {{ opt.name }}</a>{% if opt.price and opt.price|int %}: {{ opt.price|format_currency }}{% endif %}{% if opt.price_double and opt.price_double|int %} / {{ opt.price_double|format_currency }}{% endif %}
+            {% endif %}
+          </label>
+      </div>
+      <div class="card-body" style="transform: rotate(0);">
+        {% if disabled_card or is_preview or read_only %}
+          {{ opt.desc|safe }}
+          {% if disabled_card %}
+          <div class="disabled-overlay position-absolute top-0 start-0 h-100 w-100" style="background: rgba(0,0,0,0.66)">
+            <span style="text-shadow: 0px 0px 7px rgba(0, 0, 0, 1);" class="text-uppercase text-center position-absolute w-100 fw-bolder top-50 start-50 translate-middle h2">
+              {{ disabled_card_text }}
+            </span>
+          </div>
+          {% endif %}
+        {% else %}
+          {% if opt.distance %}
+          <div class="text-small">
+            Distance: {{ opt.distance|safe }}
+          </div>
+          <hr>
+          {% endif %}
+          <a href="#" class="card-link stretched-link text-reset text-decoration-none {{ target_field.name }}_card_link"
+              data-value="{{ opt.value }}">{{ opt.desc|safe }}</a>
+              <input type="radio" id="{{ field_id }}-{{ opt.value }}" name="card-{{ field_id }}" class="visually-hidden" value="{{ opt.value }}" />
+          {% for amenity in opt.amenities %}
+          <hr>
+          <div class="text-small">
+            {{ amenity|safe }}
+          </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+      {% if opt.link %}
+      <div class="card-footer">
+          {{ opt.link|popup_link('Read More', 'link-light' if disabled_card else 'link-secondary') }}
+      </div>
+      {% endif %}
+  </div>
+{% endfor %}
+</div>
+{% if show_desc %}<div class="form-text mb-3">{{ help_text or target_field.description }}</div>{% endif %}
+{% if not is_preview %}
+</fieldset>
+{% endif %}
+
+<script type="text/javascript">
+    var setField_{{ target_field.name }} = function(value) {
+        $("#{{ field_id }}").val(value).trigger('change');
+        $(".{{ target_field.name }}_card").each(function(){
+            var header = $(this).children('.card-header');
+            var body = $(this).children('.card-body');
+            var footer = $(this).children('.card-footer');
+
+            if(body.find('a').length && body.find('a').data('value') == value) {
+                header.addClass('text-white bg-primary');
+                body.addClass('bg-light');
+                if (footer.length) { footer.addClass('text-white bg-primary').children('a').removeClass('link-secondary').addClass('link-light') };
+            } else {
+                header.removeClass('text-white bg-primary');
+                body.removeClass('bg-light');
+                if (footer.length) { footer.removeClass('text-white bg-primary').children('a').addClass('link-secondary').removeClass('link-light') };
+            }
+        });
+    };
+    $(function () {
+        setField_{{ target_field.name }}("{{ target_field.data }}");
+        $('.{{ target_field.name }}_card_link').click(function(){
+            setField_{{ target_field.name }}(this.dataset.value);
+            return false;
+        });
+    });
+    var makeBadgeMatchExtra = function () {}; // TODO: Remove
+</script>
+{%- endmacro %}
+
 {% macro address_fields(model, form_obj) %}
 <div class="row g-sm-3">
   <div class="col-12 col-sm-6">

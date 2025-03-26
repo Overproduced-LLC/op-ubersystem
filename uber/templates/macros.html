@@ -22,8 +22,6 @@
 {% set group, field_name = check_dealer_editable %}
 {% if not condition %}
   {{ caller() }}
-{% elif group and group.is_dealer and group.status in c.DEALER_EDITABLE_STATUSES %}
-  {{ caller() }}
 {% else %}
   <div class="col-sm-6 form-control-static">
   {{ pre_text }}
@@ -427,24 +425,15 @@
 {%- endmacro %}
 
 
-{% macro prereg_wizard(page_path, is_dealer) -%}
-  {%- if is_dealer -%}
-    {%-
-            set steps = [
-                (('dealer_registration', 'post_dealer'), 'Table Info'),
-                (('form', 'post_form'), 'Personal Info'),
-                (('additional_info'), 'Additional Info'),
-                (('dealer_confirmation',), 'Done')]
-            -%}
-  {% else %}
-    {%-
-            set steps = [
-                (('form', 'post_form'), 'Personal Info'),
-                (('additional_info'), 'Additional Info'),
-                (('index', 'preregistration', ''), 'Review & Pay'),
-                (('paid_preregistrations',), 'Done')]
-            -%}
-  {%- endif -%}
+{% macro prereg_wizard(page_path) -%}
+  {%-
+          set steps = [
+              (('form', 'post_form'), 'Personal Info'),
+              (('lodging_info'), 'Lodging Info'),
+              (('additional_info'), 'Additional Info'),
+              (('index', 'preregistration', ''), 'Review & Pay'),
+              (('paid_preregistrations',), 'Done')]
+          -%}
   {%- set step_count = steps|length -%}
   {%- set col_size = (12 / step_count)|round(0, 'floor')|int -%}
   {%- set vars = {'is_complete': False} -%}
@@ -463,7 +452,7 @@
 
 {% macro address_form(model, name_prefix='', model_prefix='', label_prefix='', update_international=False, is_required=False, is_readonly=False, check_dealer_editable=(None, ''), use_bs5=False) -%}
   {%- set group, field_name = check_dealer_editable -%}
-  {%- set is_readonly = False if group.is_dealer and group.status in c.DEALER_EDITABLE_STATUSES else is_readonly -%}
+  {%- set is_readonly = is_readonly -%}
   {%- set suffix = model.id|replace("-", "") -%}
   {%- set zip_code_attr = model_prefix ~ 'zip_code' -%}
   {%- set address1_attr = model_prefix ~ 'address1' -%}

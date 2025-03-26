@@ -1,5 +1,5 @@
 import cherrypy
-from datetime import date
+from datetime import datetime, date, time
 
 from markupsafe import Markup
 from wtforms import (BooleanField, DateField, EmailField,
@@ -17,7 +17,7 @@ from uber.model_checks import invalid_phone_number
 from uber.utils import get_age_conf_from_birthday
 
 
-__all__ = ['AdminBadgeExtras', 'AdminBadgeFlags', 'AdminConsents', 'AdminStaffingInfo', 'BadgeExtras',
+__all__ = ['AdminBadgeExtras', 'AdminBadgeFlags', 'AdminConsents', 'AdminStaffingInfo', 'BadgeExtras', 'LodgingInfo',
            'BadgeFlags', 'BadgeAdminNotes', 'PersonalInfo', 'PreregOtherInfo', 'OtherInfo', 'StaffingInfo',
            'Consents']
 
@@ -91,7 +91,7 @@ class PersonalInfo(AddressForm, MagForm):
     no_cellphone = BooleanField('I won\'t have a phone with me during the event.')
     no_onsite_contact = BooleanField('My emergency contact is also on site with me at the event.')
     international = BooleanField('I\'m coming from outside the US.')
-
+    
     def placeholder_optional_field_names(self):
         # Note that the fields below must ALWAYS be required if the attendee is not a placeholder
         # Otherwise add them to get_optional_fields instead
@@ -185,7 +185,48 @@ class PersonalInfo(AddressForm, MagForm):
         if field.data and field.data == form.ec_phone.data:
             raise ValidationError("Your phone number cannot be the same as your emergency contact number.")
 
+class LodgingInfo(MagForm):
+    def date_within_range(self, field):
+        if datetime.combine(field.data, time.min) < self.start_date or datetime.combine(field.data, time.min) > self.end_date:
+            raise ValidationError("Date must be within the event date range.")
+        
+    # Date field, must be within the event date range
+    start_date = c.EPOCH.replace(tzinfo=None)
+    end_date = c.ESCHATON.replace(tzinfo=None)
+    # Strings for the date fields
+    start_date_str = start_date.strftime('%Y-%m-%d')
+    end_date_str = end_date.strftime('%Y-%m-%d')
+    
+    arrival_date = DateField('Arrival Date', validators=[
+        validators.Optional(),
+        date_within_range
+        ], render_kw={'placeholder': 'YYYY-MM-DD', 'min': start_date_str, 'max': end_date_str})
+    departure_date = DateField('Departure Date', validators=[
+        validators.Optional(),
+        date_within_range
+        ], render_kw={'placeholder': 'YYYY-MM-DD', 'min': start_date_str, 'max': end_date_str})
+    room_type = SelectField('Room Type', coerce=int, choices=c.ROOM_TYPE_OPTS)
+    linens = BooleanField('I need linens for my room.', widget=SwitchInput())
+    single_occupancy = BooleanField('I would like to room alone.', widget=SwitchInput())
+    roommate = StringField('Roommate', render_kw={'placeholder': 'Name of the person you want to room with, or leave blank to be matched with someone.'})
+    roommate_requests = StringField('Roommate Requests', render_kw={'placeholder': 'Any special requests for your roommate? (e.g. allergies, snoring, etc.)'})
+    
 
+    def get_non_admin_locked_fields(self, attendee):
+        locked_fields = []
+        
+        if not attendee.is_valid or attendee.badge_status == c.REFUNDED_STATUS:
+            return list(self._fields.keys())
+        
+        # if current date is after the lodging deadline, lock all fields.
+        if c.ROOM_DEADLINE and c.ROOM_DEADLINE.replace(tzinfo=None) < datetime.combine(date.today(), time.min):
+            return list(self._fields.keys())
+
+        
+        return locked_fields + ['roommate', 'roommate_requests']
+    
+         
+    
 class BadgeExtras(MagForm):
     field_validation, new_or_changed_validation = CustomValidation(), CustomValidation()
     dynamic_choices_fields = {'shirt': lambda: c.SHIRT_OPTS, 'staff_shirt': lambda: c.STAFF_SHIRT_OPTS}
@@ -278,7 +319,11 @@ class OtherInfo(MagForm):
         f'I would like to be contacted by the {c.EVENT_NAME} Accessibility Services department prior to the event '
         'and I understand my contact information will be shared with Accessibility Services for this purpose.',
         widget=SwitchInput())
-
+    # Field to upload proof of vaccination
+    vaccination_proof_path = StringField('Proof of COVID Booster Vaccination', render_kw={'type': 'file'},
+                                                    description=popup_link("../static_views/infectious_diseases.html", "Learn more"))
+    vaccination_proof_approved = BooleanField('Proof reviewed and accepted?', widget=SwitchInput())
+    
     def get_non_admin_locked_fields(self, attendee):
         locked_fields = []
 
@@ -315,10 +360,11 @@ class OtherInfo(MagForm):
 
 
 class StaffingInfo(MagForm):
+    
     dynamic_choices_fields = {'requested_depts_ids': lambda: [(v[0], v[1]) for v in c.PUBLIC_DEPARTMENT_OPTS_WITH_DESC]}
 
     staffing = BooleanField('I am interested in volunteering!', widget=SwitchInput(),
-                            description=popup_link(c.VOLUNTEER_PERKS_URL, ""))
+                            description=popup_link(c.VOLUNTEER_PERKS_URL, ""), default=True, render_kw={'readonly': True})
     requested_depts_ids = SelectMultipleField('Where do you want to help?',
                                               widget=MultiCheckbox())  # TODO: Show attendees department descriptions
 

@@ -70,7 +70,7 @@ def check_duplicate_registrations():
                 for a in session.query(Attendee).filter(Attendee.first_name != '') \
                         .filter(Attendee.badge_status == c.COMPLETED_STATUS).options(joinedload(Attendee.group)) \
                         .order_by(Attendee.registered):
-                    if not a.group or (not a.group.is_dealer or a.group.status not in [c.WAITLISTED, c.UNAPPROVED]):
+                    if not a.group or (a.group.status not in [c.WAITLISTED, c.UNAPPROVED]):
                         grouped[a.full_name, a.email.lower()].append(a)
 
                 dupes = {k: v for k, v in grouped.items() if len(v) > 1}
@@ -104,7 +104,7 @@ def check_placeholder_registrations():
             c.REGDESK_EMAIL,
             not_(or_(
                 Attendee.staffing == True,  # noqa: E712
-                Attendee.badge_type == c.GUEST_BADGE)),
+                )),
             Attendee.is_valid == True  # noqa: E712
         ]]
 
@@ -404,12 +404,9 @@ def process_terminal_sale(workstation_num, terminal_id, model_id=None, pickup_gr
                 try:
                     model = session.group(model_id)
                 except NoResultFound:
-                    try:
-                        model = session.art_show_application(model_id)
-                    except NoResultFound:
-                        txn_tracker.internal_error = f"Could not find model {model_id}!"
-                        session.commit()
-                        return
+                    txn_tracker.internal_error = f"Could not find model {model_id}!"
+                    session.commit()
+                    return
             receipt = session.get_receipt_by_model(model, create_if_none="DEFAULT")
             payment_request = SpinTerminalRequest(terminal_id=terminal_id,
                                                   receipt=receipt,

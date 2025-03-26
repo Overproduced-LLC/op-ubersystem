@@ -12,6 +12,5 @@ Disallow: /uber/preregistration/pay_for_extra_members
 Disallow: /uber/preregistration/invalid_badge
 Disallow: /uber/preregistration/invalidate
 Disallow: /uber/preregistration/confirm
-Disallow: /uber/preregistration/guest_food
 Disallow: /uber/preregistration/undo_attendee_donation
 Disallow: /uber/preregistration/process_attendee_donation

@@ -134,7 +134,7 @@
         }
     }
     var setComped = function() {
-        if ({{ [c.STAFF_BADGE, c.CONTRACTOR_BADGE, c.GUEST_BADGE] }}.map(String).includes($('#{{ badge_flags.badge_type.id }}').val())) {
+        if ({{ [c.STAFF_BADGE, c.CONTRACTOR_BADGE] }}.map(String).includes($('#{{ badge_flags.badge_type.id }}').val())) {
             $('#{{ badge_flags.paid.id }} option[value="{{ c.NEED_NOT_PAY }}"]').prop('selected', true);
         }
     }
@@ -220,7 +220,8 @@
 
 {% block paid_status %}
 {% set paid_admin_text %}
-{{ (attendee.amount_paid / 100)|format_currency }} paid / {{ (attendee.amount_refunded / 100)|format_currency }} refunded
+{{ (attendee.amount_paid / 100)|format_currency }} paid / {{ (attendee.amount_refunded / 100)|format_currency }} refunded / {{ (attendee.calc_lodging_cost() / 100)|format_currency }} lodging cost
+  </span>
 {% endset %}
 <div class="row g-sm-3">
     <div class="col">

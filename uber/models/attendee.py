@@ -216,6 +216,18 @@ class Attendee(MagModel, TakesPaymentMixin):
     no_onsite_contact = Column(Boolean, default=False)
     cellphone = Column(UnicodeText)
     no_cellphone = Column(Boolean, default=False)
+    
+    arrival_date = Column(Date, nullable=True, default=None)
+    departure_date = Column(Date, nullable=True, default=None)
+    roommate = Column(UnicodeText, nullable=True, default=None)
+    roommate_requests = Column(UnicodeText, nullable=True, default=None)
+    room_type = Column(Choice(c.ROOM_TYPE_OPTS), default=c.ROOM_TYPE_OPTS[0][0])
+    single_occupancy = Column(Boolean, default=False)
+    linens = Column(Boolean, default=False)
+    lodging_paid = Column(Choice(c.PAYMENT_OPTS), default=c.NOT_PAID, index=True, admin_only=True)
+    
+    vaccination_proof_path = Column(UnicodeText)
+    vaccination_proof_approved = Column(Boolean, default=False)
 
     requested_accessibility_services = Column(Boolean, default=False)
 
@@ -401,11 +413,13 @@ class Attendee(MagModel, TakesPaymentMixin):
     # The PIN/password used by third party hotel reservation systems
     hotel_pin = SQLAlchemyColumn(UnicodeText, nullable=True, unique=True)
     
-    # =========================
-    # tabletop
-    # =========================
-    games = relationship('TabletopGame', backref='attendee')
-    checkouts = relationship('TabletopCheckout', backref='attendee')
+    @property
+    def room_name(self):
+        if self.room_type:
+            for room in c.ROOM_TYPE_OPTS:
+                if room[0] == self.room_type:
+                    return room[1]
+        return None
     
     # =========================
     # badge printing
@@ -664,12 +678,6 @@ class Attendee(MagModel, TakesPaymentMixin):
                 self.ribbon = remove_opt(self.ribbon_ints, c.UNDER_13)
 
     @property
-    def art_show_receipt(self):
-        open_receipts = [receipt for receipt in self.art_show_receipts if not receipt.closed]
-        if open_receipts:
-            return open_receipts[0]
-
-    @property
     def full_address(self):
         if self.country and self.city and (
                     self.region or self.country not in ['United States', 'Canada']) and self.address1:
@@ -699,9 +707,6 @@ class Attendee(MagModel, TakesPaymentMixin):
         section_list = []
         if self.staffing_or_will_be:
             section_list.append('shifts_admin')
-        if (self.group and self.group.guest and self.group.guest.group_type not in [c.BAND]) \
-                or (self.badge_type == c.GUEST_BADGE and c.BAND not in self.ribbon_ints):
-            section_list.append('guest_admin')
         if self.lottery_application:
             section_list.append('hotel_lottery_admin')
         return section_list
@@ -750,6 +755,10 @@ class Attendee(MagModel, TakesPaymentMixin):
         else:
             return self.badge_type_label
 
+    @property
+    def available_room_types(self):
+        return c.FORMATTED_ROOM_TYPES
+    
     @property
     def badge_type_real(self):
         return uber.badge_funcs.get_real_badge_type(self.badge_type)
@@ -884,6 +893,30 @@ class Attendee(MagModel, TakesPaymentMixin):
             return self.active_receipt.item_total / 100
         return self.default_cost or self.calc_default_cost()
 
+    @property
+    def nights_staying(self):
+        if(self.arrival_date is None or self.departure_date is None):
+            return 0
+        return (self.departure_date - self.arrival_date).days
+        
+    def calc_lodging_cost(self):
+        room_type = int(self.room_type)
+        if room_type == c.ROOM_TYPE_OPTS[0][0] or self.arrival_date is None or self.departure_date is None:
+            return 0
+        # Calculate number of nights
+        if self.nights_staying < 1:
+            return 0
+        # Calculate cost
+        cost = 0
+        if self.single_occupancy:
+            cost += float(c.ROOM_TYPE_PRICES[room_type]) * self.nights_staying
+        else:
+            cost += float(c.ROOM_TYPE_PRICES_DOUBLE[room_type]) * self.nights_staying
+        if self.linens:
+            cost += float(c.LINENS_RATE) * self.nights_staying
+        cost *= 100 # Convert to cents
+        return int(cost)
+    
     @property
     def total_cost_if_valid(self):
         if self.active_receipt:
@@ -1100,13 +1133,6 @@ class Attendee(MagModel, TakesPaymentMixin):
         if self.badge_type in c.BADGE_TYPE_PRICES and c.AFTER_EPOCH:
             return f"Please contact {email_only(c.REGDESK_EMAIL)} to cancel your badge."
 
-        if self.art_show_applications and self.art_show_applications[0].is_valid:
-            return f"Please contact {email_only(c.ART_SHOW_EMAIL)} to cancel your art show application first."
-        if self.art_agent_apps and any(app.is_valid for app in self.art_agent_apps):
-            return "Please ask the artist you're agenting for {} first.".format(
-                "assign a new agent" if c.ONE_AGENT_PER_APP else "unassign you as an agent."
-            )
-        
         reason = ""
         if self.paid == c.NEED_NOT_PAY and not self.promo_code:
             reason = "You cannot abandon a comped badge."
@@ -1190,7 +1216,7 @@ class Attendee(MagModel, TakesPaymentMixin):
     def unassigned_name(self):
         if self.group_id and self.is_unassigned:
             return '[Unassigned {self.badge}]'.format(self=self)
-
+   
     @hybrid_property
     def full_name(self):
         return self.unassigned_name or '{self.first_name} {self.last_name}'.format(self=self)
@@ -2139,18 +2165,6 @@ class Attendee(MagModel, TakesPaymentMixin):
             elif ' ' in legal_name:
                 return legal_name.split(' ', 1)[1]
         return self.last_name
-
-    # =========================
-    # guests
-    # =========================
-
-    @property
-    def guest_group(self):
-        """
-        The Guest Group to which this attendee belongs (either as a
-        guest or a +1 comp), or None.
-        """
-        return self.group and self.group.guest
 
 
 # Many to many association table to tie Attendees to Attendee Accounts

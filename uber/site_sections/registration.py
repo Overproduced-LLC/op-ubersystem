@@ -59,7 +59,7 @@ def save_attendee(session, attendee, params):
                                                            session.get_receipt_by_model(attendee), params.copy())
         session.add_all(receipt_items)
 
-    forms = load_forms(params, attendee, ['PersonalInfo', 'AdminBadgeExtras', 'AdminConsents', 'AdminStaffingInfo',
+    forms = load_forms(params, attendee, ['PersonalInfo', 'LodgingInfo', 'AdminBadgeExtras', 'AdminConsents', 'AdminStaffingInfo',
                                           'AdminBadgeFlags', 'BadgeAdminNotes', 'OtherInfo'])
 
     for form in forms.values():
@@ -157,7 +157,7 @@ class Root:
             attendee = session.attendee(params.get('id'))
 
         if not form_list:
-            form_list = ['PersonalInfo', 'AdminBadgeExtras', 'AdminConsents', 'AdminStaffingInfo', 'AdminBadgeFlags',
+            form_list = ['PersonalInfo', 'LodgingInfo', 'AdminBadgeExtras', 'AdminConsents', 'AdminStaffingInfo', 'AdminBadgeFlags',
                          'BadgeAdminNotes', 'OtherInfo']
         elif isinstance(form_list, str):
             form_list = [form_list]
@@ -268,7 +268,7 @@ class Root:
                                            ) if c.AT_THE_CON or c.BADGE_PICKUP_ENABLED else '')
         receipt = session.refresh_receipt_and_model(attendee)
         session.commit()
-        forms = load_forms(params, attendee, ['PersonalInfo', 'AdminBadgeExtras', 'AdminConsents', 'AdminStaffingInfo',
+        forms = load_forms(params, attendee, ['PersonalInfo', 'LodgingInfo', 'AdminBadgeExtras', 'AdminConsents', 'AdminStaffingInfo',
                                               'AdminBadgeFlags', 'BadgeAdminNotes', 'OtherInfo'])
 
         return {
@@ -591,8 +591,6 @@ class Root:
                 replacement_attendee = Attendee(**{attr: getattr(attendee, attr) for attr in [
                     'group', 'registered', 'badge_type', 'badge_num', 'paid', 'amount_extra'
                 ]})
-                if replacement_attendee.group and replacement_attendee.group.is_dealer:
-                    replacement_attendee.ribbon = add_opt(replacement_attendee.ribbon_ints, c.DEALER_RIBBON)
                 session.add(replacement_attendee)
                 attendee._skip_badge_shift_on_delete = True
                 session.delete_from_group(attendee, attendee.group)
@@ -1174,6 +1172,8 @@ class Root:
             if receipt.current_amount_owed:
                 if attendee.paid in [c.NOT_PAID, c.PENDING]:
                     attendee.paid = c.HAS_PAID
+                if attendee.lodging_paid in [c.NOT_PAID, c.PENDING]:
+                    attendee.lodging_paid = c.HAS_PAID
                 if int(payment_method) == c.STRIPE_ERROR:
                     desc = f"Automated message: Stripe payment manually verified by {AdminAccount.admin_name()}."
                 else:
@@ -1439,9 +1439,8 @@ class Root:
         else:
             attendee = session.attendee(id)
 
-        forms = load_forms(params, attendee, ['PersonalInfo', 'AdminBadgeExtras', 'AdminConsents', 'AdminStaffingInfo',
+        forms = load_forms(params, attendee, ['PersonalInfo', 'LodgingInfo', 'AdminBadgeExtras', 'AdminConsents', 'AdminStaffingInfo',
                                               'AdminBadgeFlags', 'BadgeAdminNotes', 'OtherInfo'])
-
         for form in forms.values():
             form.populate_obj(attendee, is_admin=True)
 

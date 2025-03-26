@@ -160,14 +160,7 @@ class AdminAccount(MagModel):
     def allowed_api_access_opts(self):
         no_access_set = self.invalid_api_accesses()
         return [(access, label) for access, label in c.API_ACCESS_OPTS if access not in no_access_set]
-
-    @property
-    def viewable_guest_group_types(self):
-        if 'guest_admin' in self.read_or_write_access_set:
-            return [opt for opt in c.GROUP_TYPE_VARS if opt.lower() + "_admin"
-                    in self.read_or_write_access_set or opt.lower() + "_admin" not in c.ADMIN_PAGES]
-        return [opt for opt in c.GROUP_TYPE_VARS if opt.lower() + "_admin" in self.read_or_write_access_set]
-
+    
     @property
     def is_super_admin(self):
         return 'devtools' in self.write_access_set

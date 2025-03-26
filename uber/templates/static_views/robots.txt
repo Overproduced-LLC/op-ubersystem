@@ -12,6 +12,5 @@ Disallow: {{ c.PATH }}/preregistration/pay_for_extra_members
 Disallow: {{ c.PATH }}/preregistration/invalid_badge
 Disallow: {{ c.PATH }}/preregistration/invalidate
 Disallow: {{ c.PATH }}/preregistration/confirm
-Disallow: {{ c.PATH }}/preregistration/guest_food
 Disallow: {{ c.PATH }}/preregistration/undo_attendee_donation
 Disallow: {{ c.PATH }}/preregistration/process_attendee_donation

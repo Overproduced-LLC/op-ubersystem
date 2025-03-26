@@ -1,0 +1,91 @@
+{% import 'macros.html' as macros with context %}
+{% import 'forms/macros.html' as form_macros with context %}
+{% set lodging_info = lodging_info or forms['lodging_info'] %}
+
+{# BLOCK NAMES in this form:
+      dates
+      rates
+      roommates
+  Use these to add or rearrange fields. Remember to use {{ super() }} to print the original fields as-is.
+#}
+
+{% block dates %}
+<hr>
+<h3>Lodging</h3>
+<!-- Disabled outside of admin_area and is_prereg -->
+<div>
+  {{ lodging_info.room_type(id="room_type",disabled=not admin_area and not is_prereg) }}
+</div>
+{% if is_prereg %}
+{{ form_macros.lodging_card_select(lodging_info.room_type,
+  attendee.available_room_types, disabled_opts=[],
+  target_field_id="room_type", help_text="First price is single-occupancy rate, second price is double-occupancy rate. Nightly and per-person") }}
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $('#room_type').hide();
+    });
+  </script>
+{% endif %}
+<div class="row g-sm-3">
+  <div class="col-12 col-sm-6">
+    {{ form_macros.form_input(lodging_info.arrival_date) }}
+  </div>
+  <div class="col-12 col-sm-6">
+    {{ form_macros.form_input(lodging_info.departure_date) }}
+  </div>
+</div>
+{% endblock %}
+
+{% block rates %}
+<div class="row g-sm-3">
+</div>
+<div class="row g-sm-3">
+  <div class="col-12 pt-3">{{ form_macros.toggle_checkbox(lodging_info.linens, help_text="($5/night charge applies)") }}</div>
+  <div class="col-12 mt-0">{{ form_macros.toggle_checkbox(lodging_info.single_occupancy, help_text="(Single-occupancy rate applies)") }}</div>
+</div>
+{% endblock %}
+
+{% block roommates %}
+<div class="row g-sm-3">
+  <div class="col-12 col-sm-6">
+    {{ form_macros.form_input(lodging_info.roommate) }}
+  </div>
+  <div class="col-12 col-sm-6">
+    {{ form_macros.form_input(lodging_info.roommate_requests) }}
+  </div>
+</div>
+<script type="text/javascript">
+  let no_lodging_needed = '{{ c.NO_LODGING_NEEDED }}';
+  $(document).ready(function() {
+    $('#room_type').change(function() {
+      if ($(this).val() == no_lodging_needed) {
+        $('#linens').prop('checked', false);
+        $('#linens').prop('disabled', true);
+        $('#single_occupancy').prop('checked', false);
+        $('#single_occupancy').prop('disabled', true);
+        $('#roommate').val('');
+        $('#roommate').prop('disabled', true);
+        $('#roommate_requests').val('');
+        $('#roommate_requests').prop('disabled', true);
+      } else {
+        $('#linens').prop('disabled', false);
+        $('#single_occupancy').prop('disabled', false);
+        $('#roommate').prop('disabled', false);
+        $('#roommate_requests').prop('disabled', false);
+      }
+    })
+    $('#single_occupancy').change(function() {
+      if ($(this).is(':checked')) {
+        $('#roommate').val('');
+        $('#roommate').prop('disabled', true);
+        $('#roommate_requests').val('');
+        $('#roommate_requests').prop('disabled', true);
+      } else {
+        $('#roommate').prop('disabled', false);
+        $('#roommate_requests').prop('disabled', false);
+      }
+    });
+  });
+</script>
+<hr>
+{% endblock %}

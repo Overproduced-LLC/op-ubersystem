@@ -17,7 +17,7 @@ Use these to add or rearrange fields. Remember to use {{ super() }} to print the
 
 
 {% block promo_code %}
-{% if not badge_flags and not old and 'start_badge_transfer' not in c.PAGE and c.BADGE_PROMO_CODES_ENABLED and (not attendee.active_receipt or admin_area) and not is_prereg_dealer %}
+{% if not badge_flags and not old and 'start_badge_transfer' not in c.PAGE and c.BADGE_PROMO_CODES_ENABLED and (not attendee.active_receipt or admin_area) %}
     {% set promo_code_admin_text %}
         {% if c.HAS_REG_ADMIN_ACCESS and attendee.promo_code_code %}
         <a href="" id="remove_promo_code" onClick="removePromoCode(event)">Remove Promo Code</a>
@@ -75,4 +75,11 @@ Use these to add or rearrange fields. Remember to use {{ super() }} to print the
 {% endblock %}
 
 {% block prereg_extras %}
+{% if admin_area %}
+<div class="row g-sm-3">
+    <!-- TODO: Generate link for file -->
+    <a href="#">View vaccination proof</a>
+    <div class="col-12">{{ form_macros.toggle_checkbox(other_info.vaccination_proof_approved) }}</div>
+</div>
+{% endif %}
 {% endblock %}

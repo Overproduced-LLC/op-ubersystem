@@ -8,7 +8,7 @@ import wtforms.widgets.core as wtforms_widgets
 from wtforms.validators import ValidationError
 from pockets.autolog import log
 from uber.config import c
-from uber.forms.widgets import CountrySelect, IntSelect, MultiCheckbox, NumberInputGroup, SwitchInput, Ranking
+from uber.forms.widgets import CountrySelect, IntSelect, MultiCheckbox, NumberInputGroup, SwitchInput, Ranking, FileInput
 from uber.model_checks import invalid_zip_code
 
 
@@ -270,6 +270,8 @@ class MagForm(Form):
                 return 'checkbox'
             elif isinstance(widget, NumberInputGroup):
                 return 'inputgroup'
+            elif isinstance(widget, FileInput):
+                return 'file'
             elif isinstance(widget, MultiCheckbox):
                 return 'checkgroup'
             elif isinstance(widget, CountrySelect):

@@ -36,9 +36,6 @@ Use these to add or rearrange fields. Remember to use {{ super() }} to print the
 {% endif %}
 {% endblock %}
 
-{% block merch_info %}
-{% endblock %}
-
 {% block add_ons %}
 {% if c.ADDONS_ENABLED %}
 {{ badge_extras.amount_extra(id=id_upgrade_prepend ~ "amount_extra") }}

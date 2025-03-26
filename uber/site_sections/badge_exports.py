@@ -20,10 +20,6 @@ class Root:
         PrintedBadgeReport(badge_type=c.ATTENDEE_BADGE, badge_type_name='Attendee').run(out, session)
 
     @xlsx_file
-    def printed_badges_guest(self, out, session):
-        PrintedBadgeReport(badge_type=c.GUEST_BADGE, badge_type_name='Guest').run(out, session)
-
-    @xlsx_file
     def printed_badges_one_day(self, out, session):
         PrintedBadgeReport(badge_type=c.ONE_DAY_BADGE, badge_type_name='OneDay').run(out, session)
 
@@ -82,7 +78,6 @@ class Root:
     """
     badge_zipfile_contents = [
         printed_badges_attendee,
-        printed_badges_guest,
         printed_badges_one_day,
         printed_badges_minor,
         printed_badges_staff,

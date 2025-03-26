@@ -91,10 +91,7 @@ class PageViewTracking(MagModel):
                 try:
                     model = session.group(id)
                 except NoResultFound:
-                    try:
-                        model = session.art_show_application(id)
-                    except NoResultFound:
-                        pass
+                    pass
             if model:
                 which = repr(model)
             else:

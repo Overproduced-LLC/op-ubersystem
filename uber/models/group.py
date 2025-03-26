@@ -68,7 +68,6 @@ class Group(MagModel, TakesPaymentMixin):
         remote_side='Attendee.id',
         single_parent=True)
     leader = relationship('Attendee', foreign_keys=leader_id, post_update=True, cascade='all')
-    guest = relationship('GuestGroup', backref='group', uselist=False)
     active_receipt = relationship(
         'ModelReceipt',
         cascade='save-update,merge,refresh-expire,expunge',
@@ -221,11 +220,6 @@ class Group(MagModel, TakesPaymentMixin):
         if self.leader:
             if self.leader.badge_type in [c.STAFF_BADGE, c.CONTRACTOR_BADGE]:
                 section_list.append('shifts_admin')
-        if self.guest:
-            if self.guest.group_type == c.BAND:
-                section_list.append('band_admin')
-            else:
-                section_list.append('guest_admin')
         return section_list
 
     @property
@@ -399,8 +393,6 @@ class Group(MagModel, TakesPaymentMixin):
             return 0
         elif self.can_add:
             return 1
-        elif self.guest:
-            return 0
         else:
             return c.MIN_GROUP_ADDITION
 

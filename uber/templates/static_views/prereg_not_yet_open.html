@@ -8,16 +8,6 @@
     Please check back at {{ c.PREREG_OPEN|datetime_local }}!<br/>
   {%- endif -%}
   </p>
-  {%- if c.DEALER_REG_START and c.DEALER_REG_PUBLIC and c.DEALER_REG_OPEN -%}
-  <p>
-    <strong>{{ c.DEALER_TERM|capitalize }}s:</strong>
-    {% if c.BEFORE_DEALER_REG_START %}
-        {{ c.DEALER_REG_TERM|capitalize }} begin {{ c.DEALER_REG_START|datetime_local }}.
-    {% else %}
-        Please register <a href="../preregistration/dealer_registration">here</a>.
-    {% endif %}
-  </p>
-  {%- endif -%}
   Please <a href="{{ c.CONTACT_URL }}">contact us</a> if you have any questions.<br/>
 </body>
 </html>

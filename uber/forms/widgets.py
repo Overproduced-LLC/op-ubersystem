@@ -3,6 +3,20 @@ from wtforms.widgets import NumberInput, html_params, CheckboxInput, Select
 from uber.config import c
 from uber.custom_tags import linebreaksbr
 
+class FileInput():
+    """
+    Renders a file input field with a custom label.
+    """
+    def __call__(self, field, **kwargs):
+        field_id = kwargs.pop('id', field.id)
+        options = dict(kwargs, id=field_id, name=field.name)
+        if 'readonly' in options:
+            options['disabled'] = True
+        html = ['<div class="form-file">']
+        html.append('<input type="file" {} />'.format(html_params(**options)))
+        html.append('<label for="{}" class="form-label form-file-label">{}</label>'.format(field_id, field.label.text))
+        html.append('</div>')
+        return Markup(''.join(html))
 
 class MultiCheckbox():
     """

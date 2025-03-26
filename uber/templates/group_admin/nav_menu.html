@@ -1,9 +1,3 @@
-{% if group.guest %}
-  {% set return_to_hash = "#" ~ group.guest.group_type_label|lower|replace(' ','_') ~ ("s") %}
-{% elif group.is_dealer %}
-  {% set return_to_hash = "#dealers" %}
-{% endif %}
-
 {% if group.is_new %}
   {# New group page #}
   {{ macros.nav_menu(

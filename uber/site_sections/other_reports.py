@@ -1,20 +1,18 @@
 from sqlalchemy import or_
 from uber.config import c
 from uber.decorators import all_renderable, csv_file, render, site_mappable
-from uber.models import Attendee, FoodRestrictions, GuestCharity
+from uber.models import Attendee, FoodRestrictions
 
 
 @all_renderable()
 class Root:
     def food_restrictions(self, session):
         all_fr = session.query(FoodRestrictions).all()
-        guests = session.query(Attendee).filter_by(badge_type=c.GUEST_BADGE).count()
         volunteers = len([
             a for a in session.query(Attendee).filter_by(staffing=True).all()
             if a.badge_type == c.STAFF_BADGE or a.weighted_hours or not a.takes_shifts])
 
         return {
-            'guests': guests,
             'volunteers': volunteers,
             'notes': filter(bool, [getattr(fr, 'freeform', '') for fr in all_fr]),
             'standard': {
@@ -41,23 +39,17 @@ class Root:
 
         base_query = session.attendees_with_badges().filter(Attendee.is_unassigned == False)
 
-        guests = base_query.filter_by(badge_type=c.GUEST_BADGE).all()
         volunteers = [a for a in base_query.filter_by(staffing=True).all() if a.badge_type == c.STAFF_BADGE
                     or a.weighted_hours or not a.takes_shifts]
         
-        for a in volunteers + guests:
+        for a in volunteers:
             row = [a.full_name, a.badge_type_label, a.badge_num,
-                   'Yes' if a.badge_type in [c.STAFF_BADGE, c.GUEST_BADGE] or (
+                   'Yes' if a.badge_type in [c.STAFF_BADGE] or (
                        a.weighted_hours > c.HOURS_FOR_FOOD and a.worked_hours) else 'No']
             for key in ordered_food_restrictions:
                 row.append("Yes" if a.food_restrictions and key in a.food_restrictions.standard else "No")
             row.append(a.food_restrictions.freeform if a.food_restrictions else "")
             out.writerow(row)
-
-    def guest_donations(self, session):
-        return {
-            'donation_offers': session.query(GuestCharity).filter(GuestCharity.desc != '')
-        }
 
     @csv_file
     @site_mappable(download=True)

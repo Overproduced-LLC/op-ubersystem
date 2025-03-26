@@ -13,7 +13,7 @@ from uber.custom_tags import format_currency
 from uber.decorators import ajax, any_admin_access, all_renderable, csrf_protected, log_pageview
 from uber.errors import HTTPRedirect
 from uber.forms import load_forms
-from uber.models import AdminAccount, Attendee, Email, Group, GuestGroup, PageViewTracking, Tracking
+from uber.models import AdminAccount, Attendee, Email, Group, PageViewTracking, Tracking
 from uber.utils import check, validate_model, add_opt
 from uber.payments import ReceiptManager
 
@@ -35,15 +35,10 @@ class Root:
         if not show_all:
             groups = groups.filter(Group.status != c.IMPORTED)
 
-        guest_groups = groups.filter(Group.guest != None)
-
         return {
             'message': message,
             'show_all': show_all,
             'all_groups': groups,
-            'guest_groups': guest_groups,
-            'guest_checklist_items': GuestGroup(group_type=c.GUEST).sorted_checklist_items,
-            'band_checklist_items': GuestGroup(group_type=c.BAND).sorted_checklist_items,
         }
 
     def new_group_from_attendee(self, session, id):
@@ -62,7 +57,7 @@ class Root:
         raise HTTPRedirect('form?id={}&message={}', group.id, "Group successfully created.")
 
     @log_pageview
-    def form(self, session, new_dealer='', message='', **params):
+    def form(self, session, message='', **params):
         reg_station_id = cherrypy.session.get('reg_station', '')
 
         if params.get('id') not in [None, '', 'None']:
@@ -88,17 +83,12 @@ class Root:
                     form['new_badge_type'].data = group.leader.badge_type if group.leader else c.ATTENDEE_BADGE
                 if hasattr(form, 'new_ribbons') and not params.get('new_ribbons'):
                     form['new_ribbons'].data = group.leader.ribbon_ints if group.leader else []
-                if hasattr(form, 'guest_group_type') and not params.get('guest_group_type') and group.guest:
-                    form['guest_group_type'].data = group.guest.group_type
             form.populate_obj(group, is_admin=True)
 
         group_info_form = forms.get('group_info', forms.get('table_info'))
 
         if cherrypy.request.method == 'POST':
             session.add(group)
-
-            if group.is_new and group.guest_group_type:
-                group.auto_recalc = False
 
             if group.is_new or group.badges != group_info_form.badges.data:
                 if c.ADMIN_BADGES_NEED_APPROVAL and not session.current_admin_account().full_registration_admin:
@@ -112,19 +102,6 @@ class Root:
                     new_ribbon_type=group.new_ribbons,
                     badge_status=new_badge_status,
                     )
-
-            if group.is_dealer and group.status == c.SHARED:
-                if group.table_shares:
-                    message = ("This group has shared tables connected to it. "
-                               "If there are more than two tables sharing a spot, "
-                               "please connect the other tables to this group instead.")
-                if not message and 'shared_with_name' in params:
-                    shared_with_name = params.pop('shared_with_name')
-                    if shared_with_name != group.shared_with_name:
-                        try:
-                            group.set_shared_with_name(shared_with_name)
-                        except ValueError as e:
-                            message = str(e)
 
             if not message and group.is_new and group.leader_first_name:
                 session.commit()
@@ -144,10 +121,6 @@ class Root:
                     forms['personal_info'].populate_obj(leader, is_admin=True)
 
             if not message:
-                if group.guest_group_type:
-                    group.guest = group.guest or GuestGroup()
-                    group.guest.group_type = group.guest_group_type
-
                 raise HTTPRedirect('form?id={}&message={}', group.id, message or (group.name + " has been saved"))
 
         receipt = session.get_receipt_by_model(group) if not group.is_new else None
@@ -159,13 +132,12 @@ class Root:
             'forms': forms,
             'signnow_last_emailed': False,
             'signnow_signed': True,
-            'new_dealer': False,
             'payment_enabled': True if reg_station_id else False,
         }
 
     @ajax
     @any_admin_access
-    def validate_group(self, session, form_list=[], new_dealer='', **params):
+    def validate_group(self, session, form_list=[], **params):
         if params.get('id') in [None, '', 'None']:
             group = Group()
         else:
@@ -250,30 +222,4 @@ class Root:
         else:
             group.leader_id = attendee_id
             raise HTTPRedirect('form?id={}&message={}', group_id, 'Group leader set')
-
-    def checklist_info(self, session, message='', event_id=None, **params):
-        guest = session.guest_group(params)
-        if not session.admin_can_see_guest_group(guest):
-            raise HTTPRedirect('index?message={}', 'You cannot view {} groups'.format(guest.group_type_label.lower()))
-
-        if cherrypy.request.method == 'POST':
-            if event_id:
-                guest.event_id = event_id
-            message = check(guest)
-            if not message:
-                for field in ['estimated_loadin_minutes', 'estimated_performance_minutes']:
-                    if field in params:
-                        field_name = "load-in" if field == 'estimated_loadin_minutes' else 'performance'
-                        if not params.get(field):
-                            message = "Please enter more than 0 estimated {} minutes".format(field_name)
-                        elif not str(params.get(field, '')).isdigit():
-                            message = "Please enter a whole number for estimated {} minutes".format(field_name)
-            if not message:
-                raise HTTPRedirect('index?message={}{}', guest.group.name, ' data uploaded')
-
-        events = session.query(Event).filter_by(location=c.CONCERTS).order_by(Event.start_time).all()
-        return {
-            'guest': guest,
-            'message': message,
-            'events': [(event.id, event.name) for event in events]
-        }
+        

@@ -71,7 +71,7 @@
             </span>
             <span class="badge bg-secondary">{{ attendee.group.status_label }}</span>
             {% if attendee == attendee.group.leader %}
-            <a href="group_members?id={{ attendee.group.id }}" class="btn btn-primary btn-sm pull-right"><i class="fa fa-pencil"></i>&nbsp;View/Edit {{ "Application" if attendee.group.is_dealer else "Group" }}</a>
+            <a href="group_members?id={{ attendee.group.id }}" class="btn btn-primary btn-sm pull-right"><i class="fa fa-pencil"></i>&nbsp;View/Edit Group</a>
             {% endif %}
             <hr/>
         </div>

@@ -29,14 +29,6 @@
 
     If you have any questions then please contact us via <a href='{{ c.CONTACT_URL }}'>{{ c.CONTACT_URL }}</a>.
 
-    {% if attendee.group and attendee.group.is_dealer and attendee.group.status not in c.DEALER_ACCEPTED_STATUSES %}
-        <br/> <br/>
-        It looks like your {{ c.DEALER_REG_TERM }} application has not been approved yet. If your application
-        is not approved, you will be able to purchase badges for yourself and the number of assistants on the application
-        at the pre-registration price of {{ attendee.badge_cost|format_currency }} when the waitlist is exhausted. You will receive an email
-        when these badges are available for purchase.
-    {% endif %}
-
     {% if attendee.badge_type == c.STAFF_BADGE and attendee.registered == [c.PREREG_OPEN, c.DEALER_REG_START]|min %}
         <br/> <br/>
         You were registered automatically for a complimentary Staff badge as thanks for volunteering

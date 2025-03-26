@@ -28,7 +28,7 @@ from uber.decorators import department_id_adapter
 from uber.errors import CSRFException
 from uber.models import (AdminAccount, ApiToken, Attendee, AttendeeAccount, Department, DeptMembership,
                          DeptRole, Job, Session, Shift, Group,
-                         GuestGroup, Room, HotelRequests, RoomAssignment)
+                         Room, HotelRequests, RoomAssignment)
 from uber.models.badge_printing import PrintJob
 from uber.serializer import serializer
 from uber.utils import check, check_csrf, normalize_email, normalize_newlines
@@ -175,24 +175,6 @@ def _attendee_fields_and_query(full, query, only_valid=True):
 def _prepare_attendees_export(attendees, include_account_ids=False, include_apps=False,
                               include_depts=False, is_group_attendee=False):
     # If we add API classes for these models later, please move the field lists accordingly
-    art_show_import_fields = [
-        'artist_name',
-        'artist_id',
-        'banner_name',
-        'description',
-        'business_name',
-        'zip_code',
-        'address1',
-        'address2',
-        'city',
-        'region',
-        'country',
-        'paypal_address',
-        'website',
-        'special_needs',
-        'admin_notes',
-    ]
-
     fields = AttendeeLookup.attendee_import_fields + Attendee.import_fields
 
     if include_depts or include_apps:
@@ -378,61 +360,6 @@ class all_api_auth:
             if hasattr(fn, '__call__'):
                 setattr(cls, name, api_auth(*self.required_access)(fn))
         return cls
-
-
-@all_api_auth('api_read')
-class GuestLookup:
-    fields = {
-        'group_id': True,
-        'group_type': True,
-        'info': {
-            'status': True,
-            'poc_phone': True
-        },
-        'bio': {
-            'status': True,
-            'desc': True,
-            'website': True,
-            'facebook': True,
-            'twitter': True,
-            'instagram': True,
-            'twitch': True,
-            'bandcamp': True,
-            'discord': True,
-            'other_social_media': True,
-            'teaser_song_url': True,
-            'pic_url': True
-        },
-        'interview': {
-            'will_interview': True,
-            'email': True,
-            'direct_contact': True
-        },
-        'group': {
-            'name': True,
-            'website': True,
-            'description': True
-        }
-    }
-
-    def types(self):
-        return c.GROUP_TYPE_VARS
-
-    def list(self, type=None):
-        """
-        Returns a list of Guests.
-
-        Optionally, 'type' may be passed to limit the results to a specific
-        guest type.  For a full list of guest types, call the "guest.types"
-        method.
-
-        """
-        with Session() as session:
-            if type and type.upper() in c.GROUP_TYPE_VARS:
-                query = session.query(GuestGroup).filter_by(group_type=getattr(c, type.upper()))
-            else:
-                query = session.query(GuestGroup)
-            return [guest.to_dict(self.fields) for guest in query]
 
 @all_api_auth('api_read')
 class AttendeeLookup:
@@ -1358,5 +1285,4 @@ if c.API_ENABLED:
     register_jsonrpc(DepartmentLookup(), 'dept')
     register_jsonrpc(ConfigLookup(), 'config')
     register_jsonrpc(BarcodeLookup(), 'barcode')
-    register_jsonrpc(GuestLookup(), 'guest')
     register_jsonrpc(HotelLookup(), 'hotel')

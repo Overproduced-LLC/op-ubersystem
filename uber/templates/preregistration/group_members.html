@@ -60,52 +60,23 @@
 
 <div class="card">
   <div class="card-header">
-    {% if group.is_dealer %}{{ c.DEALER_APP_TERM|title }}{% else %}Group{% endif %} Information
+    Group Information
   </div>
   <div class="card-body">
     {% if group.leader %}
     {% set attendee = group.leader %}
     {% include 'confirm_tabs.html' with context %}
     {% endif %}
-    {% if group.is_dealer %}
-      {{ group_fields.status }}
-      {{ group_fields.signed_document }}
-      <h2 class="h5">"{{ group.name }}" Information</h2>
-      {{ form_macros.form_validation('group-form', 'validate_dealer' if group.is_dealer else 'validate_group') }}
-      <form method="post" action="group_members" role="form">
-        <input type="hidden" name="id" value="{{ group.id }}" />
-        {% if forms and 'group_info' in forms %}
-          {% include "forms/group/group_info.html" %}
-        {% elif forms and 'table_info' in forms %}
-          {% include "forms/group/table_info.html" %}
-          {% include "forms/group/contact_info.html" %}
-        {% endif %}
-        {% include "groupextra.html" %}
-        {% if group.status in c.DEALER_EDITABLE_STATUSES %}
-        <div id="dealer-actions">
-        <button type="submit" class="btn btn-primary" value="Update Application">Update Application</button>
-        {% endif %}
-        {% if group.status in c.DEALER_CANCELLABLE_STATUSES %}
-        <button type="submit" class="btn btn-danger" value="Cancel {{ c.DEALER_APP_TERM|title }}" form="cancel_dealer">Cancel Application</button>
-        {% endif %}
-        </div>
-      </form>
-      {% if group.status in c.DEALER_CANCELLABLE_STATUSES %}
-        <form method="post" id="cancel_dealer" action="../preregistration/cancel_dealer" class="form-horizontal" role="form">
-          <input type="hidden" name="id" value="{{ group.id }}" />
-        </form>
-      {% endif %}
-    {% endif%}
 
 <hr/>
 <h2 class="h5"> Members of "{{ group.name }}" </h2>
 
 {% if group.status not in [c.CANCELLED, c.DECLINED] %}
-{% if group.amount_unpaid and not group.is_dealer %}
+{% if group.amount_unpaid %}
     <div style="text-align:center">
         {{ stripe_form('process_group_payment',group) }}
     </div>
-{% elif not group.is_dealer and receipt and receipt.current_amount_owed and incomplete_txn %}
+{% elif receipt and receipt.current_amount_owed and incomplete_txn %}
 <div style="text-align:center">
   You currently have an incomplete payment of {{ (incomplete_txn.amount / 100)|format_currency }}.
   <br/><br/>Click here to complete your payment: {{ stripe_form('finish_pending_group_payment', group, txn_id=incomplete_txn.id, stripe_button_id="complete_txn") }}
@@ -113,16 +84,7 @@
 {% endif %}
 
 <div style="margin:15px">
-    {% if group.unregistered_badges and group.is_dealer %}
-        Some of your {{ c.DEALER_HELPER_TERM }} badges are not yet assigned to a specific person. Using the links below, please assign these badges before the close of preregistration; any badges unclaimed at that time will be
-        invalid. You may also distribute each of the registration links below to the individual members of your group,
-        which will allow them to fill in their own information as well as purchase any upgrades on their own.
-        <br/> <br/>
-    {% endif %}
-    {% if group.guest %}
-      Please check your badge information to ensure it is correct.<br/><br/>
-    {% endif %}
-    If a {{ group.is_dealer|yesno("planned " + c.DEALER_HELPER_TERM + ",group member") }} cannot attend, you may use the "This person
+    If a planned group member cannot attend, you may use the "This person
     isn't coming" button next to their entry on the list below to unset their badge, which may then be assigned to
     someone else. Upgraded badges may only be transferred directly between two people; please contact us at
     {{ c.REGDESK_EMAIL|email_only|email_to_link }} if you wish to transfer badges.
@@ -188,7 +150,7 @@
         <input type="hidden" id="estimatedCost" name="estimated_cost" value="{{ group.new_badge_cost|default(0, true) }}" />
         <div class="row g-sm-3">
           {%- set min_badges = group.min_badges_addable -%}
-          {%- set members = group.is_dealer|yesno(c.DEALER_HELPER_TERM + "s,group members") -%}
+          {%- set members = "group members" -%}
           Enter the number of {{ members }} to add.
           {% if min_badges > 1 -%}
             {%- set hours_remaining = group.hours_remaining_in_grace_period -%}
@@ -205,11 +167,7 @@
         <div class="row">
         <div class="col-auto">
           <select class="form-select" id="newBadgeCount" name="count">
-          {%- if group.is_dealer -%}
-            {{ int_options(min_badges, group.dealer_badges_remaining) }}
-          {%- else -%}
-            {{ int_options(min_badges, 10) }}
-          {%- endif -%}
+          {{ int_options(min_badges, 10) }}
           </select>
         </div>
         <div class="col-auto">
@@ -226,7 +184,7 @@
         {% if receipt and receipt.current_amount_owed %}
             $(function(){
                 $('<div class="disabled" title="Group must be paid for before new members can be added.">' +
-                    '<button disabled class="btn btn-primary">Click here to add more {{ group.is_dealer|yesno(c.DEALER_HELPER_TERM + "s,group members") }}</button>' +
+                    '<button disabled class="btn btn-primary">Click here to add more group members</button>' +
                   '</div>').insertAfter($("#add"));
             });
         {% else %}
@@ -238,7 +196,7 @@
           $('#newBadgeSubmit').text(newBadgeSubmitText + " for $" + $('#estimatedCost').val());
         }
             $(function(){
-                $('<button class="btn btn-primary">Click here to add more {{ group.is_dealer|yesno(c.DEALER_HELPER_TERM + "s,group members") }}</button>').click(function(e){
+                $('<button class="btn btn-primary">Click here to add more group members</button>').click(function(e){
                         $(e.target).hide();
                         $("#add").show();
                         updateBadgeEstimate();

@@ -24,7 +24,7 @@ from uber.config import c
 from uber import decorators
 from uber.jinja import JinjaEnv
 from uber.models import (AdminAccount, Attendee, AttendeeAccount, AutomatedEmail, Department,
-                         Group, GuestGroup, PromoCodeGroup, Room, RoomAssignment, LotteryApplication, Shift)
+                         Group, PromoCodeGroup, Room, RoomAssignment, LotteryApplication, Shift)
 from uber.utils import after, before, days_after, days_before, days_between, localized_now, DeptChecklistConf
 
 
@@ -58,7 +58,6 @@ class AutomatedEmailFixture:
             subqueryload(PromoCodeGroup.buyer)).order_by(PromoCodeGroup.id),
         Room: lambda session: session.query(Room).options(
             subqueryload(Room.assignments).subqueryload(RoomAssignment.attendee)),
-        GuestGroup: lambda session: session.query(GuestGroup).options(joinedload(GuestGroup.group))
     }
 
     def __init__(
@@ -280,11 +279,6 @@ def deferred_attendee_placeholder(a): return a.placeholder and (a.registered_loc
                                                                 and not a.admin_account)
 
 
-def guest_placeholder(a): return a.placeholder and a.badge_type == c.GUEST_BADGE and (
-            not a.group
-            or a.group.guest
-            and a.group.guest.group_type == c.GUEST)
-
 def staff_import_placeholder(a): return a.placeholder and (a.registered_local <= c.PREREG_OPEN
                                                            and (a.admin_account or
                                                                 "staff import" in a.admin_notes.lower()))
@@ -296,8 +290,6 @@ def volunteer_placeholder(a): return a.staffing and a.placeholder and a.register
 
 # and an email for group-leader-created badges
 def generic_placeholder(a): return a.placeholder and (not deferred_attendee_placeholder(a)
-                                                      and not guest_placeholder(a)
-                                                      and not band_placeholder(a)
                                                       and not staff_import_placeholder(a)
                                                       and not volunteer_placeholder(a)
                                                       and a.registered_local > earliest_opening_date)
@@ -328,15 +320,6 @@ AutomatedEmailFixture(
     deferred_attendee_placeholder,
     when=after(c.PREREG_OPEN),
     ident='claim_deferred_badge')
-
-AutomatedEmailFixture(
-    Attendee,
-    'Claim your Guest badge for {EVENT_NAME} {EVENT_YEAR}',
-    'placeholders/guest.txt',
-    guest_placeholder,
-    # query=and_(Attendee.placeholder == True, Attendee.badge_type == c.GUEST_BADGE),
-    sender=c.GUEST_EMAIL,
-    ident='guest_badge_confirmation')
 
 StopsEmailFixture(
     'Claim your Staff badge for {EVENT_NAME} {EVENT_YEAR}!',
@@ -580,69 +563,3 @@ if c.HOTELS_ENABLED:
             lambda r: r.locked_in,
             sender=c.ROOM_EMAIL_SENDER,
             ident='hotel_room_assignment')
-
-# =============================
-# guests
-# =============================
-
-class BandEmailFixture(AutomatedEmailFixture):
-    def __init__(self, subject, template, filter, ident, **kwargs):
-        AutomatedEmailFixture.__init__(
-            self,
-            GuestGroup,
-            subject,
-            template,
-            lambda b: b.group_type == c.BAND and filter(b),
-            ident,
-            sender=c.BAND_EMAIL,
-            **kwargs)
-
-
-class GuestEmailFixture(AutomatedEmailFixture):
-    def __init__(self, subject, template, filter, ident, **kwargs):
-        AutomatedEmailFixture.__init__(
-            self,
-            GuestGroup,
-            subject,
-            template,
-            lambda b: b.group_type == c.GUEST and filter(b),
-            ident,
-            sender=c.GUEST_EMAIL,
-            **kwargs)
-
-GuestEmailFixture(
-    'It\'s time to send us your info for {EVENT_NAME}!',
-    'guests/guest_checklist_announce.html',
-    lambda g: True,
-    ident='guest_checklist_inquiry')
-
-GuestEmailFixture(
-    'Reminder: Please complete your Guest Checklist for {EVENT_NAME}!',
-    'guests/guest_checklist_reminder.html',
-    lambda g: not g.checklist_completed,
-    when=days_before(7, c.GUEST_INFO_DEADLINE),
-    ident='guest_reminder_1')
-
-GuestEmailFixture(
-    'Have you forgotten anything? Your {EVENT_NAME} Guest Checklist needs you!',
-    'guests/guest_checklist_reminder.html',
-    lambda g: not g.checklist_completed,
-    when=days_after(7, c.GUEST_INFO_DEADLINE),
-    ident='guest_reminder_2')
-
-AutomatedEmailFixture(
-    GuestGroup,
-    f'Sign up to sell merch at {c.EVENT_NAME} Rock Island',
-    'guests/rock_island_intro.txt',
-    lambda g: g.group_type in c.ROCK_ISLAND_GROUPS and g.deadline_from_model('merch') and not g.group_type == c.BAND,
-    ident='rock_island_intro',
-    sender=c.ROCK_ISLAND_EMAIL)
-
-AutomatedEmailFixture(
-    GuestGroup,
-    f'Last chance to finalize your {c.EVENT_NAME} Rock Island Inventory',
-    'guests/rock_island_inventory_reminder.txt',
-    lambda g: g.group_type in c.ROCK_ISLAND_GROUPS and g.merch and g.merch.selling_merch == c.ROCK_ISLAND,
-    ident='ri_inventory_reminder',
-    when=days_before(7, c.ROCK_ISLAND_DEADLINE),
-    sender=c.ROCK_ISLAND_EMAIL)

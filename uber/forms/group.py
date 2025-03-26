@@ -36,7 +36,6 @@ class GroupInfo(MagForm):
 
 
 class AdminGroupInfo(GroupInfo):
-    guest_group_type = SelectField('Checklist Type', default=0, choices=[(0, 'N/A')] + c.GROUP_TYPE_OPTS, coerce=int)
     can_add = BooleanField('This group may purchase additional badges.')
     new_badge_type = SelectField('Badge Type', choices=c.BADGE_OPTS, coerce=int)
     cost = IntegerField('Total Group Price', validators=[
@@ -91,15 +90,12 @@ class LeaderInfo(MagForm):
 
     def get_optional_fields(self, group, is_admin=False):
         optional_list = super().get_optional_fields(group, is_admin)
-
-        if not group.guest and not getattr(group, 'guest_group_type', None):
-            optional_list.append('leader_email')
-
-            # This mess is required because including a field in this list prevents
-            # all validations from running if the field is not present
-            if not getattr(group, 'leader_cellphone', None) and not getattr(group, 'leader_email', None):
-                if not getattr(group, 'leader_first_name', None):
-                    optional_list.append('leader_last_name')
-                if not getattr(group, 'leader_last_name', None):
-                    optional_list.append('leader_first_name')
+        optional_list.append('leader_email')
+        # This mess is required because including a field in this list prevents
+        # all validations from running if the field is not present
+        if not getattr(group, 'leader_cellphone', None) and not getattr(group, 'leader_email', None):
+            if not getattr(group, 'leader_first_name', None):
+                optional_list.append('leader_last_name')
+            if not getattr(group, 'leader_last_name', None):
+                optional_list.append('leader_first_name')
         return optional_list

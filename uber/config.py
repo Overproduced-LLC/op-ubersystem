@@ -334,10 +334,6 @@ class Config(_Overridable):
 
         if section_and_page in access or section in access:
             return True
-
-        if section == 'group_admin' and any(x in access for x in ['guest_admin',
-                                                                  'band_admin']):
-            return True
         
     def update_name_problems(self):
         c.PROBLEM_NAMES = {}
@@ -490,6 +486,34 @@ class Config(_Overridable):
             if self.BADGES[badge_type] in c.DAYS_OF_WEEK
         }
 
+    @property
+    def FORMATTED_ROOM_TYPES(self):
+        room_types = []
+        print("ROOM TYPES")
+        print(c.ROOM_TYPES)
+        print("ROOM TYPE OPTS")
+        print(c.ROOM_TYPE_OPTS)
+        print("ROOM TYPE PRICES")
+        print(c.ROOM_TYPE_PRICES)
+        print("ROOM TYPE PRICES DOUBLE")
+        print(c.ROOM_TYPE_PRICES_DOUBLE)
+        print("ROOM TYPE DESCRIPTIONS")
+        print(c.ROOM_TYPE_DESCRIPTIONS)
+        for _room_type_id, _room_type in c.ROOM_TYPE_OPTS:
+            room_types.append({
+                'name': _room_type,
+                'price': c.ROOM_TYPE_PRICES[_room_type_id],
+                'price_double': c.ROOM_TYPE_PRICES_DOUBLE[_room_type_id],
+                'desc': c.ROOM_TYPE_DESCRIPTIONS[_room_type_id]['description'],
+                'amenities': c.ROOM_TYPE_DESCRIPTIONS[_room_type_id]['amenities'],
+                'distance': c.ROOM_TYPE_DESCRIPTIONS[_room_type_id]['distance'],
+                'value': _room_type_id,
+            })
+        print('ROOM TYPES')
+        print(room_types)
+        print('END ROOM TYPES')
+        return room_types
+            
     @property
     def FORMATTED_BADGE_TYPES(self):
         badge_types = []
@@ -1318,7 +1342,10 @@ def parse_config(plugin_name, module_dir):
 
 
 c = Config()
-_config = parse_config("uber", pathlib.Path("uber"))  # outside this module, we use the above c global instead of using this directly
+_config = parse_config("uber", pathlib.Path("/app/uber"))  # outside this module, we use the above c global instead of using this directly
+# Export config to file for debugging
+with open('/app/uber/config.json', 'w') as f:
+    json.dump(_config, f, indent=2)
 db_connection_string = os.environ.get('DB_CONNECTION_STRING')
 
 for conf, val in _config['secret'].items():
@@ -1614,33 +1641,26 @@ c.TEARDOWN_NIGHTS = c.NIGHT_DISPLAY_ORDER[1 + c.NIGHT_DISPLAY_ORDER.index(c.CORE
 for _attr in ['CORE_NIGHT', 'SETUP_NIGHT', 'TEARDOWN_NIGHT']:
     setattr(c, _attr + '_NAMES', [c.NIGHTS[night] for night in getattr(c, _attr + 'S')])
 
-# =============================
-# guests
-# =============================
+c.ROOM_TYPE_PRICES = {}
+for _room_type, _price in _config['room_type_prices'].items():
+    try:
+        c.ROOM_TYPE_PRICES[getattr(c, _room_type.upper())] = _price
+    except AttributeError:
+        pass
+    
+c.ROOM_TYPE_PRICES_DOUBLE = {}
+for _room_type, _price in _config['room_type_prices_double'].items():
+    try:
+        c.ROOM_TYPE_PRICES_DOUBLE[getattr(c, _room_type.upper())] = _price
+    except AttributeError:
+        pass
 
-c.ROCK_ISLAND_GROUPS = [getattr(c, group.upper()) for group in c.ROCK_ISLAND_GROUPS if group or group.strip()]
-
-# A list of checklist items for display on the guest group admin page
-c.GUEST_CHECKLIST_ITEMS = [
-    {'name': 'bio', 'header': 'Announcement Info Provided'},
-    {'name': 'performer_badges', 'header': 'Performer Badges'},
-    {'name': 'autograph'},
-    {'name': 'info', 'header': 'Agreement Completed'},
-    {'name': 'merch', 'header': 'Merch'},
-    {'name': 'interview'},
-    {'name': 'mc', 'header': 'MC'},
-    {'name': 'stage_plot', 'header': 'Stage Plans', 'is_link': True},
-    {'name': 'rehearsal'},
-    {'name': 'taxes', 'header': 'W9 Uploaded', 'is_link': True},
-    {'name': 'badges', 'header': 'Badges Claimed'},
-    {'name': 'hospitality'},
-    {'name': 'travel_plans'},
-    {'name': 'charity', 'header': 'Charity'},
-]
-
-# Generate the possible template prefixes per step
-for item in c.GUEST_CHECKLIST_ITEMS:
-    item['deadline_template'] = ['guest_checklist/', item['name'] + '_deadline.html']
+c.ROOM_TYPE_DESCRIPTIONS = {}
+for _room_type, _desc in _config['room_type_descriptions'].items():
+    try:
+        c.ROOM_TYPE_DESCRIPTIONS[getattr(c, _room_type.upper())] = _desc
+    except AttributeError:
+        pass
 
 c.SAML_SETTINGS = {}
 if c.SAML_SP_SETTINGS["privateKey"]:

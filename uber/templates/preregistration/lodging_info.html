@@ -1,6 +1,6 @@
 {% extends "./preregistration/preregbase.html" %}
 {% import 'forms/macros.html' as form_macros with context %}
-{% set title_text = "Registration Step 3 of 5: Additional Info" %}
+{% set title_text = "Registration Step 2 of 5: Lodging Info" %}
 {% block content %}
 {% if not editing %}
 {% include 'preregistration/disclaimer_popup.html' %}
@@ -9,18 +9,18 @@
   <div class="card-body">
     {{ macros.prereg_wizard(c.PAGE_PATH) }}
 
-    {{ form_macros.form_validation('prereg-form', form_list=['PreregOtherInfo'], include_disclaimers_modal=not editing) }}
+    {{ form_macros.form_validation('prereg-form', form_list=['LodgingInfo']) }}
 
-    <form novalidate method="post" id="prereg-form" action="additional_info" class="form-horizontal" role="form">
+    <form novalidate method="post" id="prereg-form" action="lodging_info" class="form-horizontal" role="form">
       <input type="hidden" name="is_prereg" value="True" />
       <input type="hidden" name="attendee_id" value="{{ attendee.id }}" />
       {{ csrf_token() }}
-      {% include "forms/attendee/prereg_other_info.html" %}
+      {% include "forms/attendee/lodging_info.html" %}
       &nbsp;
       {% if editing %}
       <button type="submit" class="btn btn-primary mt-3" value="Update">Update</button>
       {% else %}
-      <button type="submit" class="btn btn-primary mt-3" value="Add to Cart">Add to Cart</button>
+      <button type="submit" class="btn btn-primary mt-3" value="Next">Next</button>
       {% endif %}
     </form>
   </div>

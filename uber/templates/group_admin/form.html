@@ -12,9 +12,6 @@
     <div class="row mb-3">
       <div class="col text-start">
       <a class="btn btn-primary" href="../preregistration/group_members?id={{ group.id }}" target="_blank">View as Attendee</a>
-      {% if group.guest %} 
-      <a class="btn btn-info" href="../guests/index?id={{ group.guest.id }}">{{ group.guest.group_type_label }} Checklist</a>
-      {% endif %}
       </div>
     </div>
     {% if (c.AT_THE_CON or c.AFTER_PREREG_TAKEDOWN) and group.amount_unpaid %}
@@ -64,14 +61,13 @@
     <div role="tabpanel" class="tab-pane" id="group-info" aria-labelledby="group-info-tab">
   {% else %}
     <div>
-      <a href="index{{ '#dealers' if group.is_dealer else '' }}" class="btn btn-info mb-3">Back to Group List</a>
-    <h3>New {{ c.DEALER_TERM|title if group.is_dealer else "Group" }} Info</h3>
+      <a href="index" class="btn btn-info mb-3">Back to Group List</a>
+    <h3>New Group Info</h3>
   {% endif %}
   {{ form_macros.form_validation('group-form', 'validate_group') }}
   <form novalidate method="post" id="group-form" action="form">
     {{ csrf_token() }}
     <input type="hidden" name="id" value="{{ group.db_id }}" />
-    <input type="hidden" name="new_dealer" value="{{ new_dealer or '' }}" />
 
     {% if forms and 'group_info' in forms %}
       {% include "forms/group/admin_group_info.html" %}
@@ -175,21 +171,5 @@
   </div>
   {% if not group.is_new %}
     {{ "js/window-hash-tabload.js"|serve_static_content }}
-  {% else %}
-    <script type="text/javascript">
-    $(function () {
-      if($.field('guest_group_type') && $.field('guest_group_type').length) {
-        var autoTypeAndRibbon = function() {
-          if($.val('guest_group_type') == '{{ c.GUEST }}') {
-            $.field('new_badge_type').val('{{ c.GUEST_BADGE }}');
-          } else if ($.val('guest_group_type') == '{{ c.BAND }}') {
-            $.field('new_badge_type').val('{{ c.GUEST_BADGE }}');
-            $(':checkbox[value={{ c.BAND }}]').prop("checked","true");
-          }
-        };
-        $.field('guest_group_type').change(autoTypeAndRibbon);
-        autoTypeAndRibbon();
-    }});
-    </script>
   {% endif %}
 {% endblock %}

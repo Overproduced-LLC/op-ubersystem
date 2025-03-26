@@ -187,6 +187,9 @@
             <a class="nav-link border border-primary rounded" href="#personal_info">Personal Info</a>
         </li>&nbsp;
         <li class="nav-item">
+            <a class="nav-link border border-primary rounded" href="#lodging_info">Lodging Info</a>
+        </li>&nbsp;
+        <li class="nav-item">
             <a class="nav-link border border-primary rounded" href="#badge_extras">Badge Extras</a>
         </li>&nbsp;
         <li class="nav-item">
@@ -213,6 +216,10 @@
 <a id="personal_info"></a>
 {% include "forms/attendee/personal_info.html" %}
 {% include "forms/attendee/other_info.html" %}
+<button type="submit" class="btn btn-primary" value="Upload">Save</button>
+<hr/>
+<a id="lodging_info"></a>
+{% include "forms/attendee/lodging_info.html" %}
 <button type="submit" class="btn btn-primary" value="Upload">Save</button>
 <hr/>
 <a id="badge_extras"></a>

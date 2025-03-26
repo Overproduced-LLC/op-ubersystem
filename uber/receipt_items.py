@@ -91,6 +91,21 @@ def cost_from_base_badge_item(attendee, new_attendee):
     x, old_cost, y = badge_cost_tuple
     return old_cost
 
+@receipt_calculation.Attendee
+def lodging_cost(attendee, new_attendee=None):
+    cost = attendee.calc_lodging_cost()
+    label = f"Lodging for {attendee.full_name} ({attendee.arrival_date} - {attendee.departure_date})" # {c.ROOM_TYPE_OPTS[attendee.room_type]}
+    # If we're not calculating a new receipt, see if the attendee already paid for lodging and remove that cost
+    if new_attendee and attendee.lodging_paid == c.HAS_PAID:
+        cost = new_attendee.calc_lodging_cost() - attendee.calc_lodging_cost()
+        # Cost can't be negative
+        if cost < 0:
+            label += " (Refund)"
+        elif cost > 0:
+            label += " (Adjustment)"
+            
+    return (label, cost, c.LODGING)
+    
 
 @receipt_calculation.Attendee
 def base_badge_cost(attendee, new_attendee=None):

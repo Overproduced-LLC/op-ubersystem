@@ -7,7 +7,7 @@
 {% block badges_tables %}
 <div class="row g-sm-3">
     <div class="col-12 col-sm-6">{{ form_macros.form_input(group_or_table_info.tables, choices=c.ADMIN_TABLE_OPTS,
-                                    extra_field=form_macros.form_input(group_or_table_info.is_dealer,
+                                    extra_field=form_macros.form_input(False,
                                     admin_text=c.DEALER_TERM|title ~ "s are prevented from paying until they are approved, but may assign and purchase add-ons for badges.")) }}</div>
     <div class="col-12 col-sm-6">{{ form_macros.form_input(group_or_table_info.badges,
                                     choices=int_choices(1, c.MAX_GROUP_SIZE),

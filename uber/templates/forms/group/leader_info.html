@@ -22,8 +22,6 @@ Use these to add or rearrange fields. Remember to use {{ super() }} to print the
     <div class="col-12 col-sm-6">{{ form_macros.form_input(leader_info.leader_email) }}</div>
     <div class="col-12 col-sm-6">{{ form_macros.form_input(leader_info.leader_cellphone) }}</div>
 
-    {% if group and not group.is_dealer and group_info %}
-    {{ form_macros.toggle_fields_js(group_info.guest_group_type, [leader_info.leader_first_name, leader_info.leader_last_name, leader_info.leader_email], off_values=["0"], prop='', toggle_required=True) }}
-    {% endif %}
+    {{ form_macros.toggle_fields_js(0, [leader_info.leader_first_name, leader_info.leader_last_name, leader_info.leader_email], off_values=["0"], prop='', toggle_required=True) }}
 </div>
 {% endblock %}

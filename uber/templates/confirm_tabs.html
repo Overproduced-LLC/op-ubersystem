@@ -28,7 +28,7 @@
   {% if attendee.is_group_leader and attendee.group %}
   <li class="nav-item" role="presentation">
     <a href="../preregistration/group_members?id={{ attendee.group.id }}" class="nav-link{% if 'group_members' in c.PAGE_PATH %} active{% endif %}">
-      <i class="fa fa-briefcase"></i> {% if attendee.group.is_dealer %}Dealer Application{% else %}Manage {{ attendee.group.name }}{% endif %}
+      <i class="fa fa-briefcase"></i> Manage {{ attendee.group.name }}
     </a>
   </li>
   {% endif %}

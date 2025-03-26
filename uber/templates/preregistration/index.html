@@ -1,5 +1,5 @@
 {% extends "./preregistration/preregbase.html" %}
-{% set title_text = "Registration Step 3 of 4: Review & Pay" %}
+{% set title_text = "Registration Step 4 of 5: Review & Pay" %}
 {% block content %}
 
 <script type="text/javascript">
@@ -32,7 +32,7 @@
 
 <div class="card">
   <div class="card-body">
-    {{ macros.prereg_wizard(c.PAGE_PATH, is_prereg_dealer) }}
+    {{ macros.prereg_wizard(c.PAGE_PATH) }}
 
       {% if cart.attendees or cart.groups %}
         {% include 'preregistration/index_payment_form.html' %}
@@ -63,7 +63,7 @@
               {% else %}
                 {% set badge_cost = 0 %}
               {% endif %}
-              <li>{% if attendee.badge_type in c.BADGE_TYPE_PRICES %}{{ attendee.badge_type_label|replace(' ', '-') }}-level r{% else %}R{% endif %}egistration for {{ c.EVENT_NAME }}
+              <li>{% if attendee.badge_type in c.BADGE_TYPE_PRICES %}{{ attendee.badge_type_label|replace(' ', '-') }}-level r{% else %}R{% endif %}egistration for {{ c.EVENT_NAME }} (no cost)
                 {% if attendee.badges %} for {{ attendee.badges }} people{% endif %}
                 {% if badge_cost %} ({{ badge_cost|format_currency }}){% endif %}</li>
               {% if attendee.qualifies_for_discounts and attendee.age_discount and attendee.age_discount|abs > attendee.calculate_badge_cost() and not attendee.promo_code_id %}
@@ -74,6 +74,14 @@
               {% for swag in attendee.donation_swag|list + attendee.addons|list %}
                 <li>{{ swag }}</li>
               {% endfor %}
+              {% if attendee.room_type and attendee.nights_staying > 0 and not attendee.room_type == c.NO_LODGING_NEEDED %}
+                <li>{{ attendee.room_name }} - {{attendee.nights_staying}} night{% if attendee.nights_staying > 1 %}s{% endif %}, {{ attendee.single_occupancy|yesno("Single-Occupancy,Double-Occupancy") }}</li>
+              {% else %}
+                <li>No lodging needed</li>
+              {% endif %}
+              {% if attendee.linens and attendee.nights_staying > 0 %}
+                <li>Linen package</li>
+              {% endif %}
               {% if attendee.promo_code and not attendee.badges %}
                 {% if attendee.promo_code.group_id %}
                   <li>Claiming a badge in group "{{ attendee.promo_group_name }}"</li>

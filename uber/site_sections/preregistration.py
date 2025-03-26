@@ -52,6 +52,21 @@ def check_post_con(klass):
             setattr(klass, name, wrapper(method))
     return klass
 
+def _add_lodging_info(session, attendee, params):
+    # Parse the arrival and departure dates as datetime objects
+    attendee.arrival_date = datetime.strptime(params.get('arrival_date'), '%Y-%m-%d')
+    attendee.departure_date = datetime.strptime(params.get('departure_date'), '%Y-%m-%d')
+    attendee.room_type = int(params.get('room_type'))
+    attendee.roommate = params.get('roommate')
+    attendee.roommate_requests = params.get('roommate_requests')
+    if params.get('single_occupancy') == '1':
+        attendee.single_occupancy = True
+    else:
+        attendee.single_occupancy = False
+    if params.get('linens') == '1':
+        attendee.linens = True
+    else:
+        attendee.linens = False
 
 def _add_promo_code(session, attendee, submitted_promo_code):
     if attendee.promo_code and submitted_promo_code != attendee.promo_code_code:
@@ -237,7 +252,6 @@ class Root:
                         attendee.promo_group_name = real_code.group.name
             return {
                 'logged_in_account': session.current_attendee_account(),
-                'is_prereg_dealer': False,
                 'message': message,
                 'cart': cart,
                 'account_email': account_email or cart.attendees[0].email,
@@ -300,7 +314,7 @@ class Root:
         else:
             attendee = session.attendee(params.get('id'), ignore_csrf=True)
 
-        form_list = ['PersonalInfo', 'BadgeExtras', 'BadgeFlags', 'OtherInfo', 'StaffingInfo', 'Consents']
+        form_list = ['PersonalInfo', 'LodgingInfo', 'BadgeExtras', 'BadgeFlags', 'OtherInfo', 'StaffingInfo', 'Consents']
         forms = load_forms(params, attendee, form_list)
 
         if cherrypy.request.method == 'POST':
@@ -425,7 +439,6 @@ class Root:
                 'name': name,
                 'badges': badges,
                 'invite_code': params.get('invite_code', ''),
-                'is_prereg_dealer': False,
             }
 
         if cherrypy.request.method == 'POST':
@@ -464,7 +477,7 @@ class Root:
 
                     if edit_id and params.get('go_to_cart'):
                         raise HTTPRedirect('index')
-                    raise HTTPRedirect('additional_info?{}{}'.format(url_string,
+                    raise HTTPRedirect('lodging_info?{}{}'.format(url_string,
                                                                      "&editing={}".format(edit_id) if edit_id else ""))
 
         promo_code_group = None
@@ -474,7 +487,6 @@ class Root:
         return {
             'logged_in_account': session.current_attendee_account(),
             'loaded_from_group': loaded_from_group,
-            'is_prereg_dealer': False,
             'message':    message,
             'attendee':   attendee,
             'forms': forms,
@@ -486,6 +498,50 @@ class Root:
             'cart_not_empty': PreregCart.unpaid_preregs,
             'promo_code_code': params.get('promo_code', ''),
             'invite_code': params.get('invite_code', ''),
+        }
+    
+    def lodging_info(self, session, message='', editing=None, **params):
+        errors = check_if_can_reg()
+        if errors:
+            return errors
+        
+        edit_id = params.get('edit_id')
+        attendee, group = self._get_attendee_or_group(params)
+        forms = load_forms(params, attendee, ['LodgingInfo'], truncate_prefix="prereg")
+        
+        for form in forms.values():
+            form.populate_obj(attendee)
+        
+        if cherrypy.request.method == "POST":
+            _add_lodging_info(session, attendee, params)
+
+            if not message:
+                track_type = c.UNPAID_PREREG
+
+                if attendee.id in PreregCart.unpaid_preregs:
+                    track_type = c.EDITED_PREREG
+                    # Clear out any previously cached targets, in case the unpaid badge
+                    # has been edited and changed from a single to a group or vice versa.
+                    del PreregCart.unpaid_preregs[attendee.id]
+
+                PreregCart.unpaid_preregs[attendee.id] = PreregCart.to_sessionized(attendee,
+                                                                                    name=params.get('name'),
+                                                                                    badges=params.get('badges'))
+                Tracking.track(track_type, attendee)
+                url_string = "attendee_id={}".format(attendee.id)
+                
+                if not message:
+                    if edit_id and params.get('go_to_cart'):
+                        raise HTTPRedirect('index')
+                    raise HTTPRedirect('additional_info?{}{}'.format(url_string,"&editing={}".format(edit_id) if edit_id else ""))
+        
+        return {
+            'logged_in_account': session.current_attendee_account(),
+            'message':    message,
+            'attendee':   attendee,
+            'editing': editing,
+            'edit_id':    edit_id,
+            'forms': forms,
         }
 
     def additional_info(self, session, message='', editing=None, **params):
@@ -511,7 +567,6 @@ class Root:
             raise HTTPRedirect('index')
         return {
             'logged_in_account': session.current_attendee_account(),
-            'is_prereg_dealer': is_dealer_reg,
             'message':    message,
             'attendee':   attendee,
             'editing': editing,
@@ -693,7 +748,7 @@ class Root:
                     message = check_prereg_promo_code(session, attendee, used_codes)
                 if not message:
                     used_codes[attendee.promo_code_code] += 1
-                    form_list = ['PersonalInfo', 'BadgeExtras', 'PreregOtherInfo', 'Consents']
+                    form_list = ['PersonalInfo', 'LodgingInfo', 'BadgeExtras', 'PreregOtherInfo', 'Consents']
                     # Populate checkboxes based on the model (I need a better solution for this)
                     params = {}
                     if not attendee.legal_name:
@@ -931,7 +986,6 @@ class Root:
             return {
                 'logged_in_account': session.current_attendee_account(),
                 'preregs': preregs,
-                'is_prereg_dealer': False,
                 'total_cost': total_cost,
                 'message': message
             }
@@ -956,16 +1010,6 @@ class Root:
             session.commit()
 
         raise HTTPRedirect('index?message={}', message)
-
-    @id_required(Group)
-    def dealer_confirmation(self, session, id):
-        group = session.group(id)
-
-        return {
-            'logged_in_account': session.current_attendee_account(),
-            'group': group,
-            'is_prereg_dealer': True
-            }
 
     @id_required(PromoCodeGroup)
     def group_promo_codes(self, session, id, message='', **params):
@@ -1056,10 +1100,7 @@ class Root:
     def group_members(self, session, id, message='', **params):
         group = session.group(id)
 
-        if group.is_dealer:
-            form_list = ['TableInfo', 'ContactInfo']
-        else:
-            form_list = ['GroupInfo']
+        form_list = ['GroupInfo']
 
         forms = load_forms(params, group, form_list)
         for form in forms.values():
@@ -1073,7 +1114,7 @@ class Root:
 
         receipt = session.refresh_receipt_and_model(group)
         session.commit()
-        if receipt and receipt.current_amount_owed and not group.is_dealer:
+        if receipt and receipt.current_amount_owed:
             raise HTTPRedirect('group_payment?id={}', group.id)
 
         return {
@@ -1132,7 +1173,7 @@ class Root:
                 params['staffing'] = True
 
         receipt = session.get_receipt_by_model(attendee)
-        form_list = ['BadgeFlags', 'PersonalInfo', 'BadgeExtras', 'OtherInfo', 'Consents']
+        form_list = ['BadgeFlags', 'LodgingInfo', 'PersonalInfo', 'BadgeExtras', 'OtherInfo', 'Consents']
         forms = load_forms(params, attendee, form_list)
 
         for form in forms.values():
@@ -1233,7 +1274,7 @@ class Root:
                 'group_members?id={}&message={}',
                 group.id,
                 'Our {} price has gone up since you tried to add badges; please try again.'.format(
-                    "dealer badge" if group.is_dealer else "preregistration"
+                    "preregistration"
                 ))
 
         if count < group.min_badges_addable and not group.is_in_grace_period:
@@ -1242,12 +1283,6 @@ class Root:
                 group.id,
                 'You cannot add fewer than {} badges to this group.'.format(group.min_badges_addable))
         
-        if group.is_dealer and count > group.dealer_badges_remaining:
-            raise HTTPRedirect(
-                'group_members?id={}&message={}',
-                group.id,
-                'You cannot add more than {} badges'.format(group.dealer_badges_remaining))
-            
         receipt = session.get_receipt_by_model(group)
         if receipt:
             receipt_items = ReceiptManager.auto_update_receipt(group, receipt,
@@ -1262,14 +1297,8 @@ class Root:
             group.cost = group.calc_default_cost()
             session.add(group)
 
-        if group.is_dealer and not receipt:
-            raise HTTPRedirect(
-                'group_members?id={}&message={}',
-                group.id,
-                f'{count} {c.DEALER_HELPER_TERM}s added!')
-        else:
-            raise HTTPRedirect('group_payment?id={}&count={}&message={}', group.id, count,
-                               f"{count} badges have been added to your group! Please pay for them below.")
+        raise HTTPRedirect('group_payment?id={}&count={}&message={}', group.id, count,
+                            f"{count} badges have been added to your group! Please pay for them below.")
     
     @id_required(Group)
     @requires_account(Group)
@@ -1281,40 +1310,6 @@ class Root:
             'receipt': session.get_receipt_by_model(group, who='non-admin', create_if_none="DEFAULT"),
             'message': message,
         }
-
-    def cancel_dealer(self, session, id):
-        from uber.site_sections.dealer_admin import decline_and_convert_dealer_group
-        group = session.group(id)
-        has_assistants = group.badges_purchased - len(group.floating) > 1
-        decline_and_convert_dealer_group(session,
-                                         group,
-                                         c.CANCELLED,
-                                         f'Converted badge from {c.DEALER_REG_TERM} "{group.name}"\
-                                         cancelling their application.',
-                                         email_leader=False)
-
-        message = "Dealer application cancelled.{} You may purchase your own badge using the form below.".format(
-                    " Assistants have been emailed a link to purchase their badges." if has_assistants else "")
-
-        raise HTTPRedirect('../preregistration/new_badge_payment?id={}&message={}&return_to=confirm',
-                           group.leader.id, message)
-
-    def purchase_dealer_badge(self, session, id):
-        from uber.site_sections.dealer_admin import convert_dealer_badge
-        from uber.custom_tags import datetime_local_filter
-        attendee = session.attendee(id)
-        convert_dealer_badge(session, attendee, f"Self-purchased dealer badge {datetime_local_filter(datetime.now())}.")
-        session.add(attendee)
-        session.commit()
-
-        raise HTTPRedirect(f'new_badge_payment?id={attendee.id}&return_to=confirm')
-
-    def dealer_signed_document(self, session, id):
-        message = 'Thanks for signing!'
-        group = session.group(id)
-        if group.amount_unpaid:
-            message += ' Please pay your application fee below.'
-        raise HTTPRedirect(f'group_members?id={id}&message={message}')
 
     def start_badge_transfer(self, session, message='', **params):
         transfer_code = params.get('code', '').strip()
@@ -1330,7 +1325,7 @@ class Root:
                 transfer_badge = transfer_badges.filter(Attendee.has_badge == True).first()
                 
         attendee = Attendee()
-        form_list = ['PersonalInfo', 'OtherInfo', 'StaffingInfo', 'Consents']
+        form_list = ['PersonalInfo', 'LodgingInfo', 'OtherInfo', 'StaffingInfo', 'Consents']
         forms = load_forms(params, attendee, form_list)
 
         if cherrypy.request.method == 'POST' and params.get('first_name', None):
@@ -1494,7 +1489,7 @@ class Root:
         for attr in c.UNTRANSFERABLE_ATTRS:
             setattr(attendee, attr, getattr(Attendee(), attr))
 
-        form_list = ['PersonalInfo', 'OtherInfo', 'StaffingInfo', 'Consents']
+        form_list = ['PersonalInfo', 'LodgingInfo', 'OtherInfo', 'StaffingInfo', 'Consents']
         forms = load_forms(params, attendee, form_list)
 
         if cherrypy.request.method == 'POST':
@@ -1844,7 +1839,7 @@ class Root:
 
         placeholder = attendee.placeholder
 
-        form_list = ['PersonalInfo', 'BadgeExtras', 'BadgeFlags', 'OtherInfo', 'StaffingInfo', 'Consents']
+        form_list = ['PersonalInfo', 'LodgingInfo', 'BadgeExtras', 'BadgeFlags', 'OtherInfo', 'StaffingInfo', 'Consents']
         forms = load_forms(params, attendee, form_list)
         if not attendee.is_new and not attendee.placeholder:
             forms['consents'].pii_consent.data = True
@@ -1921,7 +1916,7 @@ class Root:
                     return {"error": {'': ["We could not find the badge you're trying to update."]}}
 
         if not form_list:
-            form_list = ['PersonalInfo', 'BadgeExtras', 'BadgeFlags', 'OtherInfo', 'Consents']
+            form_list = ['PersonalInfo', 'LodgingInfo', 'BadgeExtras', 'BadgeFlags', 'OtherInfo', 'Consents']
         elif isinstance(form_list, str):
             form_list = [form_list]
 
@@ -2276,14 +2271,6 @@ class Root:
             'id': account.id,
             'account_email': account_email,
         }
-
-    @id_required(Attendee)
-    @requires_account(Attendee)
-    def guest_food(self, session, id):
-        attendee = session.attendee(id)
-        assert attendee.badge_type == c.GUEST_BADGE, 'This form is for guests only'
-        cherrypy.session['staffer_id'] = attendee.id
-        raise HTTPRedirect('../staffing/food_restrictions')
 
     def credit_card_retry(self):
         return {}

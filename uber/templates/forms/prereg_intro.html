@@ -1,5 +1,5 @@
 {%- import 'macros.html' as macros -%}
-{{ macros.prereg_wizard(c.PAGE_PATH, is_prereg_dealer) }}
+{{ macros.prereg_wizard(c.PAGE_PATH) }}
 
 {% if c.DEV_BOX %}
   <div class="alert alert-info">
@@ -15,7 +15,7 @@
   </div>
 {% endif %}
 
-{% if not is_prereg_dealer and c.DEALER_REG_START and c.DEALER_REG_PUBLIC and c.DEALER_REG_OPEN %}
+{% if c.DEALER_REG_START and c.DEALER_REG_PUBLIC and c.DEALER_REG_OPEN %}
   <div class="alert alert-info">
     <strong>{{ c.DEALER_TERM|capitalize }}s:</strong>
     {% if c.BEFORE_DEALER_REG_START %}

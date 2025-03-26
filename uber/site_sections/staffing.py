@@ -47,10 +47,7 @@ class Root:
         if params:
             fr = session.food_restrictions(dict(params, attendee_id=attendee.id), checkgroups=['standard'])
             session.add(fr)
-            if attendee.badge_type == c.GUEST_BADGE:
-                raise HTTPRedirect('food_restrictions?message={}', 'Your info has been recorded, thanks a bunch!')
-            else:
-                raise HTTPRedirect('index?message={}', 'Your dietary restrictions have been recorded')
+            raise HTTPRedirect('index?message={}', 'Your dietary restrictions have been recorded')
 
         return {
             'fr': fr,

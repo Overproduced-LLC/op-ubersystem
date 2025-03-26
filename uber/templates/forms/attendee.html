@@ -47,7 +47,7 @@ $().ready(function() {
 {% endset %}
 
 {% set prereg_intro %}
-{{ macros.prereg_wizard(c.PAGE_PATH, is_prereg_dealer) }}
+{{ macros.prereg_wizard(c.PAGE_PATH) }}
 {% if is_prereg_attendee %}
   <div class="form-horizontal">
     {% if c.DEV_BOX %}
@@ -62,19 +62,6 @@ $().ready(function() {
               Otherwise, you would be automatically redirected to <a href="../static_views/prereg_closed.html">the "prereg closed" page</a>.
             {% endif %}
           </strong>
-        </p>
-      </div>
-    {% endif %}
-
-    {% if not is_prereg_dealer and c.DEALER_REG_START and c.DEALER_REG_PUBLIC and c.DEALER_REG_OPEN %}
-      <div class="form-group row">
-        <p class="col-sm-9 col-sm-offset-3">
-          <strong>{{ c.DEALER_TERM|capitalize }}s:</strong>
-          {% if c.BEFORE_DEALER_REG_START %}
-            {{ c.DEALER_REG_TERM|capitalize }} begins {{ c.DEALER_REG_START|datetime_local }}.
-          {% else %}
-            Please register <a href="dealer_registration">here</a>.
-          {% endif %}
         </p>
       </div>
     {% endif %}
@@ -176,7 +163,7 @@ $().ready(function() {
     };
     {% if not attendee or attendee.is_new or attendee.badge_type not in c.BADGE_TYPE_PRICES %}
         BADGE_TYPES.options.push({
-            title: '{% if is_prereg_attendee or is_prereg_dealer %}Attending{% elif attendee %}{{ attendee.ribbon_and_or_badge }}{% endif %}',
+            title: '{% if is_prereg_attendee %}Attending{% elif attendee %}{{ attendee.ribbon_and_or_badge }}{% endif %}',
             description: 'Allows access to the convention for its duration.',
             extra: 0,
             badge_type: '{{ c.ATTENDEE_BADGE }}',
@@ -364,19 +351,14 @@ $().ready(function() {
                     setBadge(REG_TYPES, $.field('name') && $.val('name') ? 1 : 0);  // default to attendee or group
                 }
             {% endif %}
-            {% if not is_prereg_dealer %}makeBadgeMatchExtra(){% endif %};
+            makeBadgeMatchExtra();
             if ($.field('amount_extra')) {
-                {% if not c.PREREG_DONATION_DESCRIPTIONS or is_prereg_dealer %}
+                {% if not c.PREREG_DONATION_DESCRIPTIONS %}
                     $.field('amount_extra').parents('.form-group').hide();
                 {% else %}
                     $.field('amount_extra').on('change', makeBadgeMatchExtra);
                 {% endif %}
             }
-            {% if is_prereg_dealer %}
-            if ($.field('extra_donation')) {
-              $.field('extra_donation').parents('.form-group').hide();
-            }
-            {% endif %}
         }
         togglePrices();
     });
@@ -871,11 +853,6 @@ If you're interested in kicking in an extra donation, you can{% if c.COLLECT_EXT
         if ($.field('no_cellphone')) {
             setVisible($.field('no_cellphone').parents('.checkbox'), checked);
         }
-        {% if not attendee.is_dealer %}
-            if ($.field('cellphone')) {
-                $.field('cellphone').parents('.form-group').find('label:first').css('font-weight', checked ? 'bold' : 'normal');
-            }
-        {% endif %}
     };
     {% if admin_area %}
         var toggleStaffingAdminRows = function () {
@@ -1051,15 +1028,6 @@ If you're interested in kicking in an extra donation, you can{% if c.COLLECT_EXT
   {% call macros.read_only_if(read_only, attendee.email) %}
   <div class="col-sm-6">
     <input type="email" name="email" id="email" value="{{ attendee.email }}" class="form-control" placeholder="Email Address">
-    {% if is_prereg_dealer %}
-    {{ macros.toggle_checkbox(
-                selector='input[name=email]',
-                label='Use my business email for my personal email.',
-                suffix="copy_email",
-                mode='.attendee-email .form-control',
-                name='copy_email',
-                checked=copy_email) }}
-    {% endif %}
   </div>
   {% endcall %}
   {% endif %}
@@ -1113,20 +1081,6 @@ If you're interested in kicking in an extra donation, you can{% if c.COLLECT_EXT
           $.field('international').parents('.checkbox').hide();
       });
   </script>
-  {% if is_prereg_dealer %}
-    <div class="form-group">
-      <div class="col-sm-9 col-sm-offset-3">
-        {%- set attendee_address_suffix = attendee.id|replace("-", "") -%}
-        {{ macros.toggle_checkbox(
-                    selector='.address_details' + attendee_address_suffix,
-                    label='Use my business address for my personal address.',
-                    suffix=attendee_address_suffix,
-                    required_selector='.address_details' + attendee_address_suffix + ' .form-control',
-                    name='copy_address',
-                    checked=copy_address) }}
-      </div>
-    </div>
-  {% endif %}
   <div class="row"><label class="col-sm-6 col-sm-offset-3 address_details{{ attendee_address_suffix }}">Mailing Address</label></div>
   {{ macros.address_form(attendee, update_international=True, is_required=(not admin_area)) }}
 
@@ -1248,20 +1202,10 @@ $(window).on("runJavaScript", function () {
   <label for="cellphone" class="col-sm-3 control-label">Your Phone Number</label>
 {% call macros.read_only_if(read_only, attendee.cellphone) %}
   <div class="col-sm-6">
-    <input type="text" name="cellphone" id="cellphone" value="{{ attendee.cellphone }}" class="form-control" {% if attendee.is_dealer %}required{% endif %} placeholder="A phone number we can use to contact you during the event">
-    {% if is_prereg_dealer %}
-    {{ macros.toggle_checkbox(
-                selector='input[name=cellphone]',
-                label='Use my business phone number for my cellphone number.',
-                required_selector='input[name=cellphone]',
-                suffix="copy_phone",
-                mode='input[name=cellphone]',
-                name='copy_phone',
-                checked=copy_phone) }}
-    {% endif %}
+    <input type="text" name="cellphone" id="cellphone" value="{{ attendee.cellphone }}" class="form-control" placeholder="A phone number we can use to contact you during the event">
   </div>
 {% endcall %}
-  {% if not attendee.is_dealer or admin_area %}
+  {% if not admin_area %}
     <div class="checkbox col-sm-6 col-sm-offset-3">
       {{ macros.checkbox(attendee, 'no_cellphone', label="I won't have a phone with me during the event.", label_class='cellphone-excuse', is_readonly=read_only, clientside_bool=clientside_bool) }}
     </div>
@@ -1774,6 +1718,10 @@ $(window).on("runJavaScript", function(){
       &nbsp;&nbsp;&nbsp;
       <span id="amount_refunded">
             Refunded: {{ (attendee.amount_refunded / 100)|format_currency }}
+        </span>
+        &nbsp;&nbsp;&nbsp;
+      <span id="amount_lodging">
+            Cost of lodging: {{ (attendee.calc_lodging_cost / 100)|format_currency }}
         </span>
         {% endif %}
       {% if not read_only and c.HAS_REG_ADMIN_ACCESS %}

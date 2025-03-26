@@ -9,7 +9,7 @@
   <div class="card-body">
   <h1>
   <a class="btn btn-primary" href="form">Add a Group</a>
-  {% if c.HAS_DEALER_ADMIN_ACCESS %}<a class="btn btn-success" href="form?id=None&new_dealer=true">Add {{ c.DEALER_INDEFINITE_TERM|title }}</a>{% endif %}
+  {% if c.HAS_DEALER_ADMIN_ACCESS %}<a class="btn btn-success" href="form?id=None">Add {{ c.DEALER_INDEFINITE_TERM|title }}</a>{% endif %}
   </h1>
 
   <div role="tabpanel">
@@ -19,20 +19,6 @@
       <i class="fa fa-list"></i>&nbsp;All Groups</button>
   </a>
   </li>
-  {% if c.HAS_GUEST_ADMIN_ACCESS %}
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="guests-tab" data-bs-toggle="tab" data-bs-target="#guests" type="button" role="tab" aria-controls="guests">
-      <i class="fa fa-star"></i>&nbsp;Guests
-    </button>
-  </li>
-  {% endif %}
-  {% if c.HAS_BAND_ADMIN_ACCESS %}
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="bands-tab" data-bs-toggle="tab" data-bs-target="#bands" type="button" role="tab" aria-controls="bands">
-      <i class="fa fa-music"></i>&nbsp;Bands
-    </button>
-  </li>
-  {% endif %}
   </ul>
   <div class="tab-content">
   <div role="tabpanel" class="tab-pane" id="all" aria-labelledby="all-tab">
@@ -51,8 +37,7 @@
         <tr id="{{ group.id }}">
           <td>{{ group|form_link }}</td>
           <td>
-          {% if group.guest %}{{ group.guest.group_type_label }}
-          {% else %}{{ 'Dealer' if group.is_dealer else 'N/A' }}{% endif %}
+          N/A
           </td>
           <td>
           {% if group.leader %}
@@ -66,12 +51,6 @@
       </tbody>
     </table>
   </div>
-  {% if c.HAS_GUEST_ADMIN_ACCESS %}
-  <div role="tabpanel" class="tab-pane" id="guests" aria-labelledby="guests-tab">{% include '/group_admin/guests.html' %}</div>
-  {% endif %}
-  {% if c.HAS_BAND_ADMIN_ACCESS %}
-  <div role="tabpanel" class="tab-pane" id="bands" aria-labelledby="bands-tab">{% with band = True %}{% include '/group_admin/guests.html' %}{% endwith %}</div>
-  {% endif %}
   </div>
   </div>
   </div>
