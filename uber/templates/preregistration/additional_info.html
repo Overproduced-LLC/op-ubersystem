@@ -11,7 +11,7 @@
 
     {{ form_macros.form_validation('prereg-form', form_list=['PreregOtherInfo'], include_disclaimers_modal=not editing) }}
 
-    <form novalidate method="post" id="prereg-form" action="additional_info" class="form-horizontal" role="form">
+    <form method="post" id="prereg-form" action="additional_info" class="form-horizontal" role="form" enctype="multipart/form-data">
       <input type="hidden" name="is_prereg" value="True" />
       <input type="hidden" name="attendee_id" value="{{ attendee.id }}" />
       {{ csrf_token() }}
@@ -20,7 +20,7 @@
       {% if editing %}
       <button type="submit" class="btn btn-primary mt-3" value="Update">Update</button>
       {% else %}
-      <button type="submit" class="btn btn-primary mt-3" value="Add to Cart">Add to Cart</button>
+      <button type="submit" class="btn btn-primary mt-3" value="Add to Cart">Next</button>
       {% endif %}
     </form>
   </div>

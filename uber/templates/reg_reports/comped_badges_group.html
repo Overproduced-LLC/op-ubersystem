@@ -1,7 +1,7 @@
 <table class="table table-striped datatable">
 <thead><tr>
     <th>Claimed?</th>
-    <th>Group Name</th>
+    <th>Display Name</th>
     <th>Name</th>
     <th>Name on ID</th>
     <th>Badge Type</th>
@@ -12,6 +12,7 @@
 {% for attendee in comped_attendees if attendee.group %}
     <tr>
         <td>{{ (attendee.placeholder or attendee.is_unassigned)|yesno("No,Yes") }}</td>
+        <td data-order="{{ attendee.display_name }}" data-search="{{ attendee.display_name }}">{{ attendee.display_name }}</td>
         <td data-order="{{ attendee.group_name }}" data-search="{{ attendee.group_name }}">{{ attendee.group|form_link }}</td>
         <td data-order="{{ attendee.full_name }}" data-search="{{ attendee.full_name }}"> {{ attendee|form_link }}</a> </td>
         <td>{{ attendee.legal_name }}</td>

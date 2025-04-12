@@ -1,6 +1,7 @@
 {% import 'macros.html' as macros with context %}
 {% import 'forms/macros.html' as form_macros with context %}
 {% set lodging_info = lodging_info or forms['lodging_info'] %}
+{%- set is_prereg = c.PAGE_PATH in ['/preregistration/lodging_info'] -%}
 
 {# BLOCK NAMES in this form:
       dates
@@ -13,8 +14,10 @@
 <hr>
 <h3>Lodging</h3>
 <!-- Disabled outside of admin_area and is_prereg -->
-<div>
-  {{ lodging_info.room_type(id="room_type",disabled=not admin_area and not is_prereg) }}
+<div class="row g-sm-3 mb-3">
+  <div>
+    {{ lodging_info.room_type(id="room_type",disabled=not admin_area and not is_prereg) }}
+  </div>
 </div>
 {% if is_prereg %}
 {{ form_macros.lodging_card_select(lodging_info.room_type,
@@ -25,6 +28,13 @@
       $('#room_type').hide();
     });
   </script>
+{% endif %}
+{% if not admin_area %}
+<div class="alert alert-danger" role="alert">
+  Lodging information, aside from roommates, cannot be changed through this portal after registration is paid.<br>
+  {% if not is_prereg %}Please contact the registration team if you need to make changes.{% else %}You may contact the registration team later for changes.{% endif %}
+  The deadline for changes on lodging is <b>{{ c.ROOM_DEADLINE|datetime_local }}</b>
+</div>
 {% endif %}
 <div class="row g-sm-3">
   <div class="col-12 col-sm-6">
@@ -51,7 +61,7 @@
     {{ form_macros.form_input(lodging_info.roommate) }}
   </div>
   <div class="col-12 col-sm-6">
-    {{ form_macros.form_input(lodging_info.roommate_requests) }}
+    {{ form_macros.form_input(lodging_info.roommate_requests, help_text="Don't have a roommate? Describe your ideal roommate and we may be able to match you.") }}
   </div>
 </div>
 <script type="text/javascript">

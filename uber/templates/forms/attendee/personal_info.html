@@ -17,7 +17,9 @@
 
 {% block name %}
 {% set attendee_last_name = attendee.last_name[0] ~ '.' if limited_read else attendee.last_name %}
-
+<div class="row g-sm-3">
+  <div class="col-12 col-sm-6">{{ form_macros.form_input(personal_info.display_name) }}</div>
+</div>
 <div class="row g-sm-3">
 <div class="col-12 col-sm-6">{{ form_macros.form_input(personal_info.first_name) }}</div>
 <div class="col-12 col-sm-6">{{ form_macros.form_input(personal_info.last_name, value=attendee_last_name) }}</div>

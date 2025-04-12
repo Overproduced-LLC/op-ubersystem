@@ -235,7 +235,7 @@
           <tr>
             {% block tableheadings %}
             {% if c.ATTENDEE_ACCOUNTS_ENABLED %}<th> <a href="index?order={{ order.primary_account_email }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}">Attendee Account</a> </th>{% endif %}
-            <th> <a href="index?order={{ order.group_name }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}">Group Name</a> </th>
+            <th> <a href="index?order={{ order.display_name }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}">Display Name</a> </th>
             {% if c.GROUPS_ENABLED %}<th> <a href="index?order={{ order.promo_code_group_name }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}">Promo Code Group</a> </th>{% endif %}
             <th> <a href="index?order={{ order.last_first }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}">Full Name</a> </th>
             <th> <a href="index?order={{ order.legal_name }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}">Name on ID</a> </th>
@@ -257,23 +257,9 @@
             <tr {% if attendee.badge_status == c.INVALID_STATUS or attendee.badge_status == c.IMPORTED_STATUS %}class="danger"{% endif %}>
                 {% block tablerows scoped %}
                 {% if c.ATTENDEE_ACCOUNTS_ENABLED %}<td>{{ attendee.managers[0]|form_link if attendee.managers else 'None' }}</td>{% endif %}
-                <td id="group_{{ attendee.id }}">
-                    {% if attendee.group %}
-                    <a href="../group_admin/form?id={{ attendee.group.id }}">{{ attendee.group.name }}</a>
-                    {% elif attendee.group_name %}
-                    {{ attendee.group_name }}
-                    {% endif %}
+                <td id="display_name{{ attendee.id }}">
+                    {{ attendee.display_name }}
                 </td>
-                {% if c.GROUPS_ENABLED %}
-                  <td id="promo_code_group_{{ attendee.id }}">
-                  {% for group in attendee.promo_code_groups %}
-                    <a href="promo_code_group_form?id={{ group.id }}" target="_blank">{{ group.name }}</a>
-                  {% endfor %}
-                  {% if attendee.promo_code and attendee.promo_code.group %}
-                    <a href="promo_code_group_form?id={{ attendee.promo_code.group.id }}" target="_blank">{{ attendee.promo_code_group_name }}</a>
-                  {% endif %}
-                  </td>
-                {% endif %}
                 <td id="name_{{ attendee.id }}" style="text-align:left">
                     <a href="form?id={{ attendee.id }}">{{ attendee.last_first }}</a>
                 </td>

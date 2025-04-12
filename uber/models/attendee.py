@@ -26,7 +26,7 @@ from uber.models.group import Group
 from uber.models.types import default_relationship as relationship, utcnow, Choice, DefaultColumn as Column, \
     MultiChoice, TakesPaymentMixin
 from uber.utils import add_opt, get_age_from_birthday, get_age_conf_from_birthday, hour_day_format, \
-    localized_now, mask_string, normalize_email, normalize_email_legacy, remove_opt, RegistrationCode
+    localized_now, mask_string, normalize_email, normalize_email_legacy, remove_opt, RegistrationCode, filename_extension
 
 
 __all__ = ['Attendee', 'AttendeeAccount', 'BadgePickupGroup', 'FoodRestrictions']
@@ -196,6 +196,7 @@ class Attendee(MagModel, TakesPaymentMixin):
     transfer_code = Column(UnicodeText)
 
     placeholder = Column(Boolean, default=False, admin_only=True, index=True)
+    display_name = Column(UnicodeText)
     first_name = Column(UnicodeText)
     last_name = Column(UnicodeText)
     legal_name = Column(UnicodeText)
@@ -226,7 +227,7 @@ class Attendee(MagModel, TakesPaymentMixin):
     linens = Column(Boolean, default=False)
     lodging_paid = Column(Choice(c.PAYMENT_OPTS), default=c.NOT_PAID, index=True, admin_only=True)
     
-    vaccination_proof_path = Column(UnicodeText)
+    vaccination_date = Column(Date, nullable=True, default=None)
     vaccination_proof_approved = Column(Boolean, default=False)
 
     requested_accessibility_services = Column(Boolean, default=False)

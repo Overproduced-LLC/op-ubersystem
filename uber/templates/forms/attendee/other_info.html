@@ -77,9 +77,6 @@ Use these to add or rearrange fields. Remember to use {{ super() }} to print the
 {% block prereg_extras %}
 {% if admin_area %}
 <div class="row g-sm-3">
-    <!-- TODO: Generate link for file -->
-    <a href="#">View vaccination proof</a>
-    <div class="col-12">{{ form_macros.toggle_checkbox(other_info.vaccination_proof_approved) }}</div>
 </div>
 {% endif %}
 {% endblock %}

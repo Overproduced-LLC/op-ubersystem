@@ -10,7 +10,7 @@ This page only shows up to <strong>{{ c.ROW_LOAD_LIMIT }}</strong> attendees. Yo
       <tr>
         {% block tableheadings %}
         <th>Status</th>
-        <th> Group Name </th>
+        <th> Display Name </th>
         <th> Full Name </th>
         <th> Name on ID </th>
         <th> Email </th>
@@ -27,8 +27,8 @@ This page only shows up to <strong>{{ c.ROW_LOAD_LIMIT }}</strong> attendees. Yo
         <tr {% if attendee.badge_status == c.INVALID_STATUS %}class="danger"{% endif %}>
             {% block tablerows scoped %}
             <td>{{ attendee.badge_status_label }}</td>
-            <td id="group_{{ attendee.id }}">
-                {{ attendee.group|form_link }}
+            <td id="display_name_{{ attendee.id }}">
+                {{ attendee.display_name }}
             </td>
             <td id="name_{{ attendee.id }}" style="text-align:left"><a href="#attendee_form?id={{ attendee.id }}">{{ attendee.full_name }}</a></td>
               <td id="name_{{ attendee.id }}" style="text-align:left">

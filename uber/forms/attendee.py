@@ -32,6 +32,10 @@ def valid_cellphone(form, field):
 class PersonalInfo(AddressForm, MagForm):
     field_validation, new_or_changed_validation = CustomValidation(), CustomValidation()
 
+    display_name = StringField('Display Name (what we know you as)', validators=[
+            validators.DataRequired("Please provide a display name."),
+        ], render_kw={'autocomplete': "nickname"}
+    )
     first_name = StringField('First Name', validators=[
         validators.DataRequired("Please provide your first name.")
         ], render_kw={'autocomplete': "fname"})
@@ -223,7 +227,7 @@ class LodgingInfo(MagForm):
             return list(self._fields.keys())
 
         
-        return locked_fields + ['roommate', 'roommate_requests']
+        return locked_fields + ['arrival_date', 'departure_date', 'room_type', 'linens', 'single_occupancy']
     
          
     
@@ -320,9 +324,8 @@ class OtherInfo(MagForm):
         'and I understand my contact information will be shared with Accessibility Services for this purpose.',
         widget=SwitchInput())
     # Field to upload proof of vaccination
-    vaccination_proof_path = StringField('Proof of COVID Booster Vaccination', render_kw={'type': 'file'},
-                                                    description=popup_link("../static_views/infectious_diseases.html", "Learn more"))
-    vaccination_proof_approved = BooleanField('Proof reviewed and accepted?', widget=SwitchInput())
+    vaccination_date = DateField('Most Recent COVID Booster Date', render_kw={'placeholder': 'YYYY-MM-DD', 'required': True, 'max': datetime.today().strftime('%Y-%m-%d'), 'min': '2020-01-01'})
+    vaccination_proof_approved = BooleanField('Vaccinations reviewed and accepted?', widget=SwitchInput())
     
     def get_non_admin_locked_fields(self, attendee):
         locked_fields = []
@@ -405,7 +408,7 @@ class PreregOtherInfo(OtherInfo, StaffingInfo):
     dynamic_choices_fields = {'requested_depts_ids': lambda: [(v[0], v[1]) for v in c.PUBLIC_DEPARTMENT_OPTS_WITH_DESC]}
 
     staffing = BooleanField('I am interested in volunteering!', widget=SwitchInput(),
-                            description=popup_link(c.VOLUNTEER_PERKS_URL, ""))
+                            description=popup_link(c.VOLUNTEER_PERKS_URL, ""), default=True)
     requested_depts_ids = SelectMultipleField('Where do you want to help?',
                                               widget=MultiCheckbox())  # TODO: Show attendees department descriptions
     cellphone = TelField('Phone Number', description="A cellphone number is required for volunteers.", validators=[

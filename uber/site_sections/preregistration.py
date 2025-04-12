@@ -1,3 +1,4 @@
+import shutil
 import json
 from datetime import datetime, timedelta
 from functools import wraps
@@ -558,13 +559,14 @@ class Root:
 
         if cherrypy.request.method == "POST":
             _add_promo_code(session, attendee, params.get('promo_code_code'))
-
-            PreregCart.unpaid_preregs[attendee.id] = PreregCart.to_sessionized(attendee,
-                                                                               name=attendee.name,
-                                                                               badges=attendee.badges)
-            Tracking.track(c.EDITED_PREREG, attendee)
-
-            raise HTTPRedirect('index')
+            if not message:
+                attendee.vaccination_date = params.get('vaccination_date')
+                PreregCart.unpaid_preregs[attendee.id] = PreregCart.to_sessionized(attendee,
+                                                                                name=attendee.name,
+                                                                                badges=attendee.badges)
+                Tracking.track(c.EDITED_PREREG, attendee)
+                raise HTTPRedirect('index')
+        
         return {
             'logged_in_account': session.current_attendee_account(),
             'message':    message,
