@@ -68,6 +68,10 @@ def datetime_filter(dt, fmt='%-I:%M%p %Z on %A, %b %-e'):
 def datetime_local_filter(dt, fmt='%-I:%M%p %Z on %A, %b %-e'):
     return '' if not dt else datetime_filter(dt.astimezone(c.EVENT_TIMEZONE), fmt=fmt)
 
+# Just display the Month-Day-Year
+@JinjaEnv.jinja_filter(name='date')
+def date_filter(dt, fmt='%m/%d/%Y'):
+    return '' if not dt else dt.strftime(fmt)
 
 @JinjaEnv.jinja_filter
 def time_day_local(dt):

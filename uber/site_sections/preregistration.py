@@ -514,9 +514,14 @@ class Root:
             form.populate_obj(attendee)
         
         if cherrypy.request.method == "POST":
-            _add_lodging_info(session, attendee, params)
+            if(not params.get('arrival_date') or not params.get('departure_date')):
+                message = "Please enter both an arrival and departure date. "
+                
+            if not params.get('room_type'):
+                message += "Please select a room type."
 
             if not message:
+                _add_lodging_info(session, attendee, params)
                 track_type = c.UNPAID_PREREG
 
                 if attendee.id in PreregCart.unpaid_preregs:
@@ -559,8 +564,12 @@ class Root:
 
         if cherrypy.request.method == "POST":
             _add_promo_code(session, attendee, params.get('promo_code_code'))
+            
+            if (not params.get('vaccination_date')):
+                message = "Please enter a vaccination date. "
+            
             if not message:
-                attendee.vaccination_date = params.get('vaccination_date')
+                attendee.vaccination_date = datetime.strptime(params.get('vaccination_date'), '%Y-%m-%d')
                 PreregCart.unpaid_preregs[attendee.id] = PreregCart.to_sessionized(attendee,
                                                                                 name=attendee.name,
                                                                                 badges=attendee.badges)

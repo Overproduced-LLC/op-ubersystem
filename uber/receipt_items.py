@@ -94,7 +94,10 @@ def cost_from_base_badge_item(attendee, new_attendee):
 @receipt_calculation.Attendee
 def lodging_cost(attendee, new_attendee=None):
     cost = attendee.calc_lodging_cost()
-    label = f"Lodging for {attendee.full_name} ({attendee.arrival_date} - {attendee.departure_date})" # {c.ROOM_TYPE_OPTS[attendee.room_type]}
+    # Lodging for name (start - end) [mm-dd]
+    arrival_date = attendee.arrival_date.strftime("%m-%d") if attendee.arrival_date else ""
+    departure_date = attendee.departure_date.strftime("%m-%d") if attendee.departure_date else ""
+    label = f"Lodging for {attendee.full_name} ({arrival_date} - {departure_date})" # {c.ROOM_TYPE_OPTS[attendee.room_type]}
     # If we're not calculating a new receipt, see if the attendee already paid for lodging and remove that cost
     if new_attendee and attendee.lodging_paid == c.HAS_PAID:
         cost = new_attendee.calc_lodging_cost() - attendee.calc_lodging_cost()
@@ -105,7 +108,21 @@ def lodging_cost(attendee, new_attendee=None):
             label += " (Adjustment)"
             
     return (label, cost, c.LODGING)
-    
+
+@receipt_calculation.Attendee
+def lodging_tax(attendee, new_attendee=None):
+    tax_rate = float(c.LODGING_TAX_RATE) / 100
+    cost = attendee.calc_lodging_cost() * tax_rate
+    label = f"Lodging tax for {attendee.full_name}" # {c.ROOM_TYPE_OPTS[attendee.room_type]}
+    # If we're not calculating a new receipt, see if the attendee already paid for lodging and remove that cost
+    if new_attendee and attendee.lodging_paid == c.HAS_PAID:
+        cost = (new_attendee.calc_lodging_cost() - attendee.calc_lodging_cost()) * tax_rate
+        # Cost can't be negative
+        if cost < 0:
+            label += " (Refund)"
+        elif cost > 0:
+            label += " (Adjustment)"
+    return (label, cost, c.LODGING)
 
 @receipt_calculation.Attendee
 def base_badge_cost(attendee, new_attendee=None):

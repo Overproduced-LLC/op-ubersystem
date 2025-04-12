@@ -1205,11 +1205,11 @@ $(window).on("runJavaScript", function () {
     <input type="text" name="cellphone" id="cellphone" value="{{ attendee.cellphone }}" class="form-control" placeholder="A phone number we can use to contact you during the event">
   </div>
 {% endcall %}
-  {% if not admin_area %}
+  <!-- {% if not admin_area %}
     <div class="checkbox col-sm-6 col-sm-offset-3">
       {{ macros.checkbox(attendee, 'no_cellphone', label="I won't have a phone with me during the event.", label_class='cellphone-excuse', is_readonly=read_only, clientside_bool=clientside_bool) }}
     </div>
-  {% endif %}
+  {% endif %} -->
 </div>
 {% endif %}
 {% endset %}

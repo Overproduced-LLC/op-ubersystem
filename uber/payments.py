@@ -686,7 +686,7 @@ class TransactionRequest:
                                                                                params.get('first_name', ''),
                                                                                params.get('last_name', ''))
                     if not payment_profile:
-                        return f"Could not complete payment. Please contact us at {email_only(c.REGDESK_EMAIL)}."
+                        return f"Could not complete payment. Please contact us in the Registration Help channel."
 
             elif 'cc_num' in params:
                 # This is only for refunds, hence the lack of expiration date
@@ -782,7 +782,7 @@ class TransactionRequest:
                 self.log_authorizenet_response(intent_id, txn_info, card_info)
 
                 return "Transaction failed. Please refresh the page and try again, " + \
-                    f"or contact us at {email_only(c.REGDESK_EMAIL)}."
+                    f"or contact us at Registration Help channel."
         else:
             log.error(f"Transaction {self.tracking_id} request to AuthNet failed: no response received.")
 

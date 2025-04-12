@@ -10,10 +10,10 @@
     {% set staffing_message = "Please " ~ 'see Staffing Operations to change your volunteer status.' if c.AT_THE_CON else 'unassign yourself from shifts before changing your volunteer status.' %}
     {% endif %}
 {% endif %}
-<!-- <div class="row g-sm-3">
+<div class="row g-sm-3">
     <div class="col-12">{{ form_macros.toggle_checkbox(other_info.staffing, 
-        [other_info.requested_depts_ids, other_info.cellphone] if include_cellphone else [other_info.requested_depts_ids], toggle_required=True, help_text=staffing_message) }}</div>
-</div> -->
+        [other_info.requested_depts_ids, other_info.cellphone] if include_cellphone else [other_info.requested_depts_ids], toggle_required=True, help_text=staffing_message, checked=True) }}</div>
+</div>
 
 {% if include_cellphone %}
 <div class="row g-sm-3">
@@ -32,6 +32,6 @@
 
 <label class="col-sm-3 control-label">Vaccination Proof</label>
 <div class="col-sm-6">
-  {{ form_macros.form_input(other_info.vaccination_date, type="date", help_text="Must have occurred before registering") }}
+  {{ form_macros.form_input(other_info.vaccination_date, type="date", help_text="Must have occurred before registering", required=True) }}
 </div>
 {% endblock %}

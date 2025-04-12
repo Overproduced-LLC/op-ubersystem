@@ -1,5 +1,5 @@
 import cherrypy
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 
 from markupsafe import Markup
 from wtforms import (BooleanField, DateField, EmailField,
@@ -191,12 +191,12 @@ class PersonalInfo(AddressForm, MagForm):
 
 class LodgingInfo(MagForm):
     def date_within_range(self, field):
-        if datetime.combine(field.data, time.min) < self.start_date or datetime.combine(field.data, time.min) > self.end_date:
+        if datetime.combine(field.data, time.max) < self.start_date or datetime.combine(field.data, time.min) > self.end_date:
             raise ValidationError("Date must be within the event date range.")
         
     # Date field, must be within the event date range
-    start_date = c.EPOCH.replace(tzinfo=None)
-    end_date = c.ESCHATON.replace(tzinfo=None)
+    start_date = c.CHECK_IN_EARLIEST.replace(tzinfo=None)
+    end_date = c.CHECK_OUT_LATEST.replace(tzinfo=None)
     # Strings for the date fields
     start_date_str = start_date.strftime('%Y-%m-%d')
     end_date_str = end_date.strftime('%Y-%m-%d')
@@ -407,8 +407,7 @@ class AdminStaffingInfo(StaffingInfo):
 class PreregOtherInfo(OtherInfo, StaffingInfo):
     dynamic_choices_fields = {'requested_depts_ids': lambda: [(v[0], v[1]) for v in c.PUBLIC_DEPARTMENT_OPTS_WITH_DESC]}
 
-    staffing = BooleanField('I am interested in volunteering!', widget=SwitchInput(),
-                            description=popup_link(c.VOLUNTEER_PERKS_URL, ""), default=True)
+    staffing = BooleanField('I am interested in volunteering!', widget=SwitchInput(), default=True, render_kw={'readonly': True, 'value': '1', 'checked': 'checked', 'default': '1'})
     requested_depts_ids = SelectMultipleField('Where do you want to help?',
                                               widget=MultiCheckbox())  # TODO: Show attendees department descriptions
     cellphone = TelField('Phone Number', description="A cellphone number is required for volunteers.", validators=[

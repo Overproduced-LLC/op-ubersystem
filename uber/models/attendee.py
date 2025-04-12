@@ -1130,9 +1130,9 @@ class Attendee(MagModel, TakesPaymentMixin):
         if self.checked_in:
             return "This badge has already been picked up."
         if self.badge_type in [c.STAFF_BADGE, c.CONTRACTOR_BADGE]:
-            return f"Please contact {email_only(c.STAFF_EMAIL)} to cancel or defer your badge."
+            return f"Please contact Registration Help channel to cancel or defer your badge."
         if self.badge_type in c.BADGE_TYPE_PRICES and c.AFTER_EPOCH:
-            return f"Please contact {email_only(c.REGDESK_EMAIL)} to cancel your badge."
+            return f"Please contact Registration Help channel to cancel your badge."
 
         reason = ""
         if self.paid == c.NEED_NOT_PAY and not self.promo_code:
@@ -1145,7 +1145,7 @@ class Attendee(MagModel, TakesPaymentMixin):
         if reason:
             return reason + " Please {} contact us at {}{}.".format(
                 "transfer your badge instead or" if self.is_transferable else "",
-                email_only(c.REGDESK_EMAIL),
+                " Registration Help ",
                 " to cancel your badge")
 
     @property
@@ -1328,17 +1328,19 @@ class Attendee(MagModel, TakesPaymentMixin):
 
     @property
     def is_inherently_transferable(self):
-        return self.badge_status == c.COMPLETED_STATUS \
-            and not self.checked_in \
-            and (self.paid in [c.HAS_PAID, c.PAID_BY_GROUP] or self.in_promo_code_group) \
-            and self.badge_type in c.TRANSFERABLE_BADGE_TYPES \
-            and not self.overridden_price \
-            and not self.admin_account \
-            and not self.dept_memberships_with_inherent_role
+        return False
+        # return self.badge_status == c.COMPLETED_STATUS \
+        #     and not self.checked_in \
+        #     and (self.paid in [c.HAS_PAID, c.PAID_BY_GROUP] or self.in_promo_code_group) \
+        #     and self.badge_type in c.TRANSFERABLE_BADGE_TYPES \
+        #     and not self.overridden_price \
+        #     and not self.admin_account \
+        #     and not self.dept_memberships_with_inherent_role
 
     @property
     def is_transferable(self):
-        return self.is_inherently_transferable or self.can_transfer
+        return False
+        # return self.is_inherently_transferable or self.can_transfer
 
     @property
     def cannot_transfer_reason(self):

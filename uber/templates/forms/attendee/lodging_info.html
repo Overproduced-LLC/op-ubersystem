@@ -13,6 +13,7 @@
 {% block dates %}
 <hr>
 <h3>Lodging</h3>
+{{ macros.popup_link("../static_views/roomTypes.html",'About Room Types') }}
 <!-- Disabled outside of admin_area and is_prereg -->
 <div class="row g-sm-3 mb-3">
   <div>
@@ -36,12 +37,19 @@
   The deadline for changes on lodging is <b>{{ c.ROOM_DEADLINE|datetime_local }}</b>
 </div>
 {% endif %}
+<div class="alert alert-info" role="alert">
+  Check-in Earliest: <b>{{ c.CHECK_IN_EARLIEST|date }}</b><br>
+  Setup: <b>{{ c.SETUP_START|date }}</b><br>
+  Broadcast: <b>{{ c.EVENT_START|date }}</b><br>
+  Teardown: <b>{{ c.TEARDOWN_START|date }}</b><br>
+  Check-out Latest: <b>{{ c.CHECK_OUT_LATEST|date }}</b><br>
+</div>
 <div class="row g-sm-3">
   <div class="col-12 col-sm-6">
-    {{ form_macros.form_input(lodging_info.arrival_date) }}
+    {{ form_macros.form_input(lodging_info.arrival_date, required=True) }}
   </div>
   <div class="col-12 col-sm-6">
-    {{ form_macros.form_input(lodging_info.departure_date) }}
+    {{ form_macros.form_input(lodging_info.departure_date, required=True) }}
   </div>
 </div>
 {% endblock %}

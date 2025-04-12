@@ -82,6 +82,9 @@
               {% if attendee.linens and attendee.nights_staying > 0 %}
                 <li>Linen package</li>
               {% endif %}
+              {% if c.LODGING_TAX_RATE and attendee.nights_staying > 0 %}
+                <li>{{c.LODGING_TAX_RATE}}% Sales Tax</li>
+              {% endif %}
               {% if attendee.promo_code and not attendee.badges %}
                 {% if attendee.promo_code.group_id %}
                   <li>Claiming a badge in group "{{ attendee.promo_group_name }}"</li>
