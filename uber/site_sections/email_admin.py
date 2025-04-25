@@ -190,11 +190,11 @@ class Root:
 
         attendees = session.query(Attendee).filter_by(can_spam=True).order_by('email').all()
 
-        out.writerow(["fullname", "email", "zipcode"])
+        out.writerow(["display_name", "email", "zipcode"])
 
         for a in attendees:
             if set(interests).intersection(a.interests_ints):
-                out.writerow([a.full_name, a.email, a.zip_code])
+                out.writerow([a.display_name, a.email, a.zip_code])
 
     def emails_by_kickin(self, message=''):
         return {
@@ -221,6 +221,6 @@ class Root:
         attendees = session.query(Attendee).filter(
             base_filter, attendee_filter, *email_filter).all()
 
-        out.writerow(["fullname", "email", "zipcode"])
+        out.writerow(["display_name", "email", "zipcode"])
         for a in attendees:
-            out.writerow([a.full_name, a.email, a.zip_code])
+            out.writerow([a.display_name, a.email, a.zip_code])

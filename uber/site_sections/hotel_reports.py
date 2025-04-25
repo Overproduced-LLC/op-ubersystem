@@ -18,7 +18,7 @@ def _inconsistent_shoulder_shifts(session):
             subqueryload(Attendee.depts_where_working),
             subqueryload(Attendee.shifts).subqueryload(Shift.job).subqueryload(Job.department),
             subqueryload(Attendee.hotel_requests)) \
-        .filter(HotelRequests.approved == True).order_by(Attendee.full_name, Attendee.id)  # noqa: E712
+        .filter(HotelRequests.approved == True).order_by(Attendee.display_name, Attendee.id)  # noqa: E712
 
     shoulder_nights_missing_shifts = defaultdict(lambda: defaultdict(list))
 
@@ -54,7 +54,7 @@ def _attendee_hotel_nights(session):
     query = session.query(Attendee).filter(Attendee.assigned_depts.any()).options(
         subqueryload(Attendee.depts_where_working),
         subqueryload(Attendee.shifts).subqueryload(Shift.job).subqueryload(Job.department),
-        subqueryload(Attendee.hotel_requests)).order_by(Attendee.full_name, Attendee.id)
+        subqueryload(Attendee.hotel_requests)).order_by(Attendee.display_name, Attendee.id)
 
     attendee_hotel_nights = []
 
@@ -180,13 +180,13 @@ class Root:
 
         departments = []
         for dept in sorted(set(shoulder_nights_missing_shifts.keys()), key=lambda d: d.name):
-            dept_heads = sorted(dept.dept_heads, key=lambda a: a.full_name)
+            dept_heads = sorted(dept.dept_heads, key=lambda a: a.display_name)
             dept_head_emails = ', '.join([
-                a.full_name + (' <{}>'.format(a.email) if a.email else '') for a in dept_heads])
+                a.display_name + (' <{}>'.format(a.email) if a.email else '') for a in dept_heads])
             dept.dept_head_emails = dept_head_emails
             dept.inconsistent_attendees = []
             departments.append(dept)
-            for attendee in sorted(shoulder_nights_missing_shifts[dept], key=lambda a: a.full_name):
+            for attendee in sorted(shoulder_nights_missing_shifts[dept], key=lambda a: a.display_name):
                 nights = shoulder_nights_missing_shifts[dept][attendee]
                 night_names = ' / '.join([c.NIGHTS[n] for n in c.NIGHT_DISPLAY_ORDER if n in nights])
                 attendee.night_names = night_names
@@ -203,7 +203,7 @@ class Root:
             for attendee in sorted(shoulder_nights_missing_shifts[dept], key=lambda a: a.full_name):
                 nights = shoulder_nights_missing_shifts[dept][attendee]
                 night_names = ' / '.join([c.NIGHTS[n] for n in c.NIGHT_DISPLAY_ORDER if n in nights])
-                rows.append([dept.name, attendee.full_name, attendee.email, night_names])
+                rows.append([dept.name, attendee.display_name, attendee.email, night_names])
 
         out.writerow(['Department', 'Attendee', 'Attendee Email', 'Inconsistent Nights'])
         for row in rows:

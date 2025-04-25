@@ -92,7 +92,7 @@
                   <td>
                     <input type="checkbox" name="attendee_ids" value="{{ attendee.id }}">
                   </td>
-                  <td data-order="{{ attendee.full_name }}" data-search="{{ attendee.full_name }}">
+                  <td data-order="{{ attendee.display_name }}" data-search="{{ attendee.display_name }}">
                     {{ attendee|form_link }}
                   </td>
                   <td>{{ attendee.badge }}</td>

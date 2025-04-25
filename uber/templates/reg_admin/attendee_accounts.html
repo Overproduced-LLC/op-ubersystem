@@ -21,7 +21,7 @@
                 {{ account|form_link }}
             </td>
             <td> {% for attendee in account.attendees %} 
-                <nobr>{%- if not loop.first -%}/ {% endif %}<a href="#attendee_form?id={{ attendee.id }}">{{ attendee.full_name }}</a></nobr>
+                <nobr>{%- if not loop.first -%}/ {% endif %}<a href="#attendee_form?id={{ attendee.id }}">{{ attendee.display_name }}</a></nobr>
                 {% endfor %} </td>
             <td>
                 <form class="pull-left form reset-form form-inline" method="post" action="../preregistration/reset_password">

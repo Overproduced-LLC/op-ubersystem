@@ -1,9 +1,9 @@
 {% extends "base.html" %}{% set admin_area=True %}
-{% block title %}{{ attendee.full_name}}'s Schedules{% endblock %}
+{% block title %}{{ attendee.display_name}}'s Schedules{% endblock %}
 {% block backlink %}{% endblock %}
 {% block content %}
 
-<h2> {{ attendee.full_name }}'s Printable Schedule </h2>
+<h2> {{ attendee.display_name }}'s Printable Schedule </h2>
 
 {% if c.UBER_SHUTDOWN %}
 <div style="text-align:center ; font-style:italic">

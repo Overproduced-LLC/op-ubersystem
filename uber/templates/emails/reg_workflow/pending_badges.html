@@ -7,13 +7,13 @@
     {% if c.ATTENDEE_ACCOUNTS_ENABLED and account.pending_attendees|length > 1 %}
     You have {{ account.pending_attendees|length }} badges that are registered, but not paid for. These badges are for:
     <ul>
-        {% for attendee in account.pending_attendees %}<li>{{ attendee.full_name }}</li>{% endfor %}
+        {% for attendee in account.pending_attendees %}<li>{{ attendee.display_name }}</li>{% endfor %}
     </ul>
     <strong>These are not valid badges</strong> and you will not be able to pick them up at the event.
     {% else %}
-    You're <em>almost</em> done buying a badge for {{ attendee.full_name }}, but your payment did not complete.
-    Unless you received a separate email for {{ attendee.full_name }} with the subject "{{ c.EVENT_NAME }} registration confirmed",
-    {{ attendee.full_name }} <strong>does not have a valid badge</strong> for {{ c.EVENT_NAME }}.
+    You're <em>almost</em> done buying a badge for {{ attendee.display_name }}, but your payment did not complete.
+    Unless you received a separate email for {{ attendee.display_name }} with the subject "{{ c.EVENT_NAME }} registration confirmed",
+    {{ attendee.display_name }} <strong>does not have a valid badge</strong> for {{ c.EVENT_NAME }}.
     {% endif %}
     </p>
 

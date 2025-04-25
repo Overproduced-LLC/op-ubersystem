@@ -68,14 +68,14 @@
               </tr>
             </thead>
             <tbody>
-              {% for membership in department.memberships|sort(attribute='attendee.full_name') %}
+              {% for membership in department.memberships|sort(attribute='attendee.display_name') %}
                 {%- set attendee = membership.attendee -%}
                 {%- set has_role = attendee.has_role(role) -%}
                 <tr>
                   <td data-order="{{ has_role }}" >
                     <input type="checkbox" name="dept_memberships_ids" value="{{ membership.id }}" {% if has_role %}checked="checked"{% endif %}>
                   </td>
-                  <td data-order="{{ attendee.full_name }}" data-search="{{ attendee.full_name }}">
+                  <td data-order="{{ attendee.display_name }}" data-search="{{ attendee.display_name }}">
                     {{ attendee|form_link }}
                   </td>
                   <td>{{ attendee.badge }}</td>

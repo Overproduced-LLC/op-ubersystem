@@ -8,7 +8,7 @@
   </script>
   {{ "js/servertimecheck.js"|serve_static_content }}
 
-  <h2>Payment for {{ attendee.full_name }}</h2>
+  <h2>Payment for {{ attendee.display_name }}</h2>
 
   <div class="center">
     {{ stripe_form('take_payment',attendee) }}

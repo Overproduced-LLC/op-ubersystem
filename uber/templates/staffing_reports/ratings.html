@@ -4,7 +4,7 @@
 
 <h2>Poor Ratings From This Year</h2>
 {% for attendee in current %}
-    <h3>{{ attendee.full_name }}</h3>  
+    <h3>{{ attendee.display_name }}</h3>  
     <b>{{ attendee.worked_hours }}</b> hours worked ({{ attendee.nonshift_minutes / 60 }} of them were nonshift hours) <br/>
     <b>{{ attendee.weighted_hours }}</b> hours signed up for <br/>
     {% if attendee.admin_notes %}<br/><b>Admin Notes:</b><br/><pre>{{ attendee.admin_notes }}</pre>{% endif %}
@@ -33,7 +33,7 @@
 
 <h2>Poor Ratings From Previous Years</h2>
 {% for attendee in prev_years %}
-    <h3>{{ attendee.full_name }}</h3>
+    <h3>{{ attendee.display_name }}</h3>
     {% for year in attendee.past_years_json %}
         <h3>{{ year.year }}</h3>
         <b>{{ year.worked_hours }}</b> hours worked ({{ year.nonshift_hours }} of them were nonshift hours) <br/>

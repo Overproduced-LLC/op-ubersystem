@@ -41,7 +41,7 @@
           </td>
           <td>
           {% if group.leader %}
-          <a href="#attendee_form?id={{ group.leader_id }}">{{ group.leader.full_name }}</a>
+          <a href="#attendee_form?id={{ group.leader_id }}">{{ group.leader.display_name }}</a>
           {% else %}None{% endif %}
           </td>
           <td>{{ group.badges - group.unregistered_badges }} / {{ group.badges }}</td>

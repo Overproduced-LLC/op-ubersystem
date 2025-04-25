@@ -33,7 +33,7 @@ def job_dict(job, shifts=None):
             'comment': shift.comment,
             'worked_label': shift.worked_label,
             'attendee_id': shift.attendee.id,
-            'attendee_name': shift.attendee.full_name,
+            'attendee_name': shift.attendee.display_name,
             'attendee_badge': shift.attendee.badge_num
         } for shift in job.shifts]
     }

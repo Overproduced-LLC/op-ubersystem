@@ -275,7 +275,7 @@ class Root:
                     session.commit()
                 session.add(PasswordReset(admin_account=account, hashed=create_new_hash(password)))
                 body = render('emails/accounts/password_reset.txt', {
-                    'name': account.attendee.full_name,
+                    'name': account.attendee.display_name,
                     'password':  password}, encoding=None)
 
                 send_email.delay(
@@ -355,14 +355,14 @@ class Root:
     def can_spam(self, out, session):
         out.writerow(["fullname", "email", "zipcode"])
         for a in session.query(Attendee).filter_by(can_spam=True).order_by('email').all():
-            out.writerow([a.full_name, a.email, a.zip_code])
+            out.writerow([a.display_name, a.email, a.zip_code])
 
     # print out a CSV list of staffers (ignore can_spam for this since it's for internal staff mailing)
     @csv_file
     def staff_emails(self, out, session):
         out.writerow(["fullname", "email", "zipcode"])
         for a in session.query(Attendee).filter_by(staffing=True, placeholder=False).order_by('email').all():
-            out.writerow([a.full_name, a.email, a.zip_code])
+            out.writerow([a.display_name, a.email, a.zip_code])
 
     @public
     def insert_test_admin(self, session):

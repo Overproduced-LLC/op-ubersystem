@@ -1,7 +1,7 @@
 {% import 'macros.html' as macros with context %}
 {% set model = attendee if attendee else group %}
 {% set admin_area=True %}
-  <h2>Changelog for {{ model.full_name|default(model.name) }} {% if c.AT_THE_CON and model.badge_num %}({{ model.badge_num }}){% endif %}</h2>
+  <h2>Changelog for {{ model.display_name|default(model.name) }} {% if c.AT_THE_CON and model.badge_num %}({{ model.badge_num }}){% endif %}</h2>
 
   <table class="table table-striped table-bordered table-sm">
     <thead><tr>
@@ -22,7 +22,7 @@
     {% endfor %}
   </table>
 
-  <h2>Page View History for {{ model.full_name|default(model.name) }} {% if c.AT_THE_CON and model.badge_num %}({{ model.badge_num }}){% endif %}</h2>
+  <h2>Page View History for {{ model.display_name|default(model.name) }} {% if c.AT_THE_CON and model.badge_num %}({{ model.badge_num }}){% endif %}</h2>
 
   <table class="table table-striped table-bordered table-sm">
     <thead><tr>

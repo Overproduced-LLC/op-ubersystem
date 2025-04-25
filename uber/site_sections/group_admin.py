@@ -49,7 +49,7 @@ class Root:
             else:
                 link = '../accounts/homepage?'
             raise HTTPRedirect('{}message={}', link, "That attendee is already in a group!")
-        group = Group(name="{}'s Group".format(attendee.full_name))
+        group = Group(name="{}'s Group".format(attendee.display_name))
         attendee.group = group
         group.leader = attendee
         session.add(group)

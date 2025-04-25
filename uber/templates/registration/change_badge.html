@@ -29,7 +29,7 @@
     });
 </script>
 
-<h3 align="center"> Assign New Badge to {{ attendee.full_name }} </h3>
+<h3 align="center"> Assign New Badge to {{ attendee.display_name }} </h3>
 
 <form method="post" action="change_badge">
 {{ csrf_token() }}

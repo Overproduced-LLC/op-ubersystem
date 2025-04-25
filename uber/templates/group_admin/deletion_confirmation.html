@@ -8,7 +8,7 @@ This group still has assigned badges:
 <ul>
     {% for attendee in group.attendees %}
         {% if not attendee.is_unassigned %}
-            <li> <a href="#attendee_form?id={{ attendee.id }}">{{ attendee.full_name }}</a> </li>
+            <li> <a href="#attendee_form?id={{ attendee.id }}">{{ attendee.display_name }}</a> </li>
         {% endif %}
     {% endfor %}
 </ul>

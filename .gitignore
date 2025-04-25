@@ -39,3 +39,4 @@ uber.ini
 ssl-cert.pem
 ssl-key.pem
 celerybeat-schedule
+uber/static/*.pdf

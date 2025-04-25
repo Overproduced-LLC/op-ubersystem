@@ -94,12 +94,12 @@ def check_prereg_promo_code(session, attendee, codes_in_cart=defaultdict(int)):
             message = session.add_promo_code_to_attendee(attendee, universal_code, codes_in_cart)
             session.commit()
             if message:
-                return f"There are no more badges left in the group {attendee.full_name} " \
+                return f"There are no more badges left in the group {attendee.display_name} " \
                     f"is trying to claim a badge in."
             return ""
         attendee.promo_code_id = None
         session.commit()
-        return "The promo code you're using for {} has been used already.".format(attendee.full_name)
+        return "The promo code you're using for {} has been used already.".format(attendee.display_name)
 
 
 def update_prereg_cart(session):
@@ -625,7 +625,7 @@ class Root:
             if qr_code_id:
                 current_pickup_group = session.query(BadgePickupGroup).filter_by(public_id=qr_code_id).first()
                 for attendee in current_pickup_group.attendees:
-                    registrations_list.append(attendee.full_name)
+                    registrations_list.append(attendee.display_name)
             elif c.ATTENDEE_ACCOUNTS_ENABLED:
                 qr_code_id = qr_code_id or (account_pickup_group.public_id if account_pickup_group else '')
 
@@ -650,7 +650,7 @@ class Root:
                 qr_code_id = pickup_group.public_id
 
         for attendee in cart.attendees:
-            registrations_list.append(attendee.full_name)
+            registrations_list.append(attendee.display_name)
             if c.ATTENDEE_ACCOUNTS_ENABLED:
                 session.add_attendee_to_account(attendee, account)
             if pickup_group:
@@ -774,7 +774,7 @@ class Root:
                         # Flatten the errors as we don't have fields on this page
                         # message = ' '.join([item for sublist in all_errors.values() for item in sublist])
                 if message:
-                    message += f" Please click 'Edit' next to {attendee.full_name}'s registration to fix any issues."
+                    message += f" Please click 'Edit' next to {attendee.display_name}'s registration to fix any issues."
                     break
 
             if not message:
@@ -1200,7 +1200,7 @@ class Root:
                 session.add_attendee_to_account(attendee, session.current_attendee_account())
             elif attendee.placeholder:
                 raise HTTPRedirect('group_members?id={}&message={}', group.id,
-                                   f"Thanks! We'll email {attendee.full_name} to finish filling out their badge!")
+                                   f"Thanks! We'll email {attendee.display_name} to finish filling out their badge!")
 
             # Free group badges are considered 'registered' when they are actually claimed.
             if group.cost == 0:
@@ -1654,7 +1654,7 @@ class Root:
                 receipt_id=receipt.id,
                 department=c.REG_RECEIPT_ITEM,
                 category=c.CANCEL_ITEM,
-                desc=f"Refunding and Cancelling {attendee.full_name}'s Badge",
+                desc=f"Refunding and Cancelling {attendee.display_name}'s Badge",
                 amount=-(receipt.payment_total - receipt.refund_total),
                 who='non-admin',
             ))
@@ -1786,7 +1786,7 @@ class Root:
                 if attendee not in account.at_door_pending_attendees:
                     receipt = session.get_receipt_by_model(attendee)
                     if receipt and receipt.current_amount_owed:
-                        attendees_who_owe_money[attendee.full_name] = receipt.current_amount_owed
+                        attendees_who_owe_money[attendee.display_name] = receipt.current_amount_owed
 
         account_attendee = None
         account_attendees = session.valid_attendees().filter(~Attendee.badge_status.in_([c.REFUNDED_STATUS,
@@ -2080,7 +2080,7 @@ class Root:
     def process_attendee_payment(self, session, id, receipt_id, message='', **params):
         receipt = session.model_receipt(receipt_id)
         attendee = session.attendee(id)
-        charge_desc = "{}: {}".format(attendee.full_name, receipt.charge_description_list)
+        charge_desc = "{}: {}".format(attendee.display_name, receipt.charge_description_list)
         charge = TransactionRequest(receipt, attendee.email, charge_desc, who='non-admin')
 
         message = charge.prepare_payment()
@@ -2154,7 +2154,7 @@ class Root:
 
         session.commit()
 
-        charge_desc = "{}: {}".format(attendee.full_name, receipt.charge_description_list)
+        charge_desc = "{}: {}".format(attendee.display_name, receipt.charge_description_list)
         charge = TransactionRequest(receipt, attendee.email, charge_desc, who='non-admin')
 
         message = charge.prepare_payment()
@@ -2290,7 +2290,7 @@ class Root:
     # TODO: this may be all now-dead one-time code (attendee.owed_shirt doesn't exist anymore)
     def shirt_reorder(self, session, message='', **params):
         attendee = session.attendee(params, restricted=True)
-        assert attendee.owed_shirt, "There's no record of {} being owed a tshirt".format(attendee.full_name)
+        assert attendee.owed_shirt, "There's no record of {} being owed a tshirt".format(attendee.display_name)
         if 'address' in params:
             if attendee.shirt in [c.NO_SHIRT, c.SIZE_UNKNOWN]:
                 message = 'Please select a shirt size.'

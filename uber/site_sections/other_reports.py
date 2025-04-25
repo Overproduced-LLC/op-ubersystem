@@ -43,7 +43,7 @@ class Root:
                     or a.weighted_hours or not a.takes_shifts]
         
         for a in volunteers:
-            row = [a.full_name, a.badge_type_label, a.badge_num,
+            row = [a.display_name, a.badge_type_label, a.badge_num,
                    'Yes' if a.badge_type in [c.STAFF_BADGE] or (
                        a.weighted_hours > c.HOURS_FOR_FOOD and a.worked_hours) else 'No']
             for key in ordered_food_restrictions:
@@ -54,11 +54,11 @@ class Root:
     @csv_file
     @site_mappable(download=True)
     def requested_accessibility_services(self, out, session):
-        out.writerow(['Registered', 'Badge #', 'Full Name', 'Badge Type', 'Email', 'Comments'])
+        out.writerow(['Registered', 'Badge #', 'Display Name', 'Badge Type', 'Email', 'Comments'])
         query = session.query(Attendee).filter_by(requested_accessibility_services=True)
         for person in query.all():
             out.writerow([
                 person.registered_local.strftime('%Y-%m-%d %H:%M'),
-                person.badge_num, person.full_name, person.badge_type_label,
+                person.badge_num, person.display_name, person.badge_type_label,
                 person.email, person.comments
             ])

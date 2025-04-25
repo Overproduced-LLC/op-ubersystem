@@ -35,7 +35,7 @@ Use these to add or rearrange fields. Remember to use {{ super() }} to print the
                 event.preventDefault();
                 bootbox.confirm({
                     backdrop: true,
-                    title: 'Remove "{{ attendee.promo_code_code }}" from "{{ attendee.full_name }}"?',
+                    title: 'Remove "{{ attendee.promo_code_code }}" from "{{ attendee.display_name }}"?',
                     message: 'This will remove the promo code\'s discount from the attendee and ' +
                     'set them to unpaid. They will be asked to pay the difference to complete their registration.',
                     buttons: {

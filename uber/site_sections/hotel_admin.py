@@ -118,7 +118,7 @@ class Root:
         attendee.hotel_eligible = True
         session.commit()
         return '{} has now been overridden as being hotel eligible'.format(
-            attendee.full_name)
+            attendee.display_name)
 
 
 def _attendee_nights_without_shifts(attendee):
@@ -133,7 +133,7 @@ def _attendee_nights_without_shifts(attendee):
 def _attendee_dict(attendee, verbose=False):
     return {
         'id': attendee.id,
-        'name': attendee.full_name,
+        'name': attendee.display_name,
         'nights': getattr(attendee.hotel_requests, 'nights_display', ''),
         'nights_without_shifts': _attendee_nights_without_shifts(attendee),
         'special_needs': getattr(attendee.hotel_requests, 'special_needs', ''),
@@ -154,7 +154,7 @@ def _room_dict(room):
         'locked_in': room.locked_in,
         'nights': room.nights_display,
         'attendees': [
-            _attendee_dict(ra.attendee) for ra in sorted(room.assignments, key=lambda ra: ra.attendee.full_name)]
+            _attendee_dict(ra.attendee) for ra in sorted(room.assignments, key=lambda ra: ra.attendee.display_name)]
     }, **{night: getattr(room, night) for night in c.NIGHT_NAMES})
 
 
@@ -168,7 +168,7 @@ def _get_confirmed(session):
         .filter(
             Attendee.hotel_requests != None,  # noqa: E711
             Attendee.badge_status.in_([c.NEW_STATUS, c.COMPLETED_STATUS])) \
-        .order_by(Attendee.full_name, Attendee.id)  # noqa: E711
+        .order_by(Attendee.display_name, Attendee.id)  # noqa: E711
     return attendee_query
 
 
@@ -183,7 +183,7 @@ def _get_unconfirmed(session):
             Attendee.hotel_eligible == True,  # noqa: E712
             Attendee.hotel_requests == None,  # noqa: E711
             Attendee.badge_status.in_([c.NEW_STATUS, c.COMPLETED_STATUS])) \
-        .order_by(Attendee.full_name, Attendee.id)  # noqa: E712
+        .order_by(Attendee.display_name, Attendee.id)  # noqa: E712
     return attendee_query
 
 

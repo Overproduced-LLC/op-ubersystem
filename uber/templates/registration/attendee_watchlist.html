@@ -50,7 +50,7 @@ $(function () {
   </script>
 
   <h2>{% if not attendee.watchlist_id %}Possible Watchlist Entries{% else %}Watchlist Entry{% endif %}
-    for {{ attendee.full_name }} ({{ attendee.badge }})</h2>
+    for {{ attendee.display_name }} ({{ attendee.badge }})</h2>
   <div class="card card-body mb-3">
   {% if attendee.badge_status == c.WATCHED_STATUS %}
       <form role="form" method="post" action="../security_admin/update_watchlist_entry">
@@ -63,7 +63,7 @@ $(function () {
         <div class="form-text">Sets attendee to "Completed" status, allowing them to check in without altering any watchlist entries.</div>
       </form>
   {% else %}
-  <p>{{ attendee.full_name }} currently has a badge status of {{ attendee.badge_status_label }} and is{% if attendee.cannot_check_in_reason %} NOT{% endif %} ready to check in.</p>
+  <p>{{ attendee.display_name }} currently has a badge status of {{ attendee.badge_status_label }} and is{% if attendee.cannot_check_in_reason %} NOT{% endif %} ready to check in.</p>
   {% endif %}
 
   {% if attendee.watchlist_id %}

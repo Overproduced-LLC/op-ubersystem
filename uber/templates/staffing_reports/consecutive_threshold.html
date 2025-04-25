@@ -9,7 +9,7 @@ The following {{ flagged|length }} volunteers have signed up for at least 13 hou
 <table style="width:auto">
     {% for attendee in flagged %}
         <tr>
-            <td><a href="#attendee_form?id={{ attendee.id }}&tab_view=Shifts">{{ attendee.full_name }}</a>:</td>
+            <td><a href="#attendee_form?id={{ attendee.id }}&tab_view=Shifts">{{ attendee.display_name }}</a>:</td>
             <td>{{ attendee.shift_minutes|length / 60 }} total (wall-clock) hours</td>
         </tr>
     {% endfor %}

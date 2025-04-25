@@ -30,7 +30,7 @@ This page only shows up to <strong>{{ c.ROW_LOAD_LIMIT }}</strong> attendees. Yo
             <td id="display_name_{{ attendee.id }}">
                 {{ attendee.display_name }}
             </td>
-            <td id="name_{{ attendee.id }}" style="text-align:left"><a href="#attendee_form?id={{ attendee.id }}">{{ attendee.full_name }}</a></td>
+            <td id="name_{{ attendee.id }}" style="text-align:left"><a href="#attendee_form?id={{ attendee.id }}">{{ attendee.display_name }}</a></td>
               <td id="name_{{ attendee.id }}" style="text-align:left">
                   {{ attendee.legal_name }}
               </td>

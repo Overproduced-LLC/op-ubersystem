@@ -13,7 +13,7 @@
     <tr>
         <td>{{ (attendee.placeholder or attendee.is_unassigned)|yesno("No,Yes") }}</td>
         <td>{{ attendee.promo_code_code }}</td>
-        <td data-order="{{ attendee.full_name }}" data-search="{{ attendee.full_name }}"> {{ attendee|form_link }}</a> </td>
+        <td data-order="{{ attendee.display_name }}" data-search="{{ attendee.display_name }}"> {{ attendee|form_link }}</a> </td>
         <td>{{ attendee.legal_name }}</td>
         <td>{{ attendee.badge_type_label }} {% if attendee.ribbon != c.NO_RIBBON %} {{ attendee.ribbon_label }} {% endif %}</td>
         <td>{{ attendee.badge_num }}</td>

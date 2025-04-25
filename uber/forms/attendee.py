@@ -32,14 +32,14 @@ def valid_cellphone(form, field):
 class PersonalInfo(AddressForm, MagForm):
     field_validation, new_or_changed_validation = CustomValidation(), CustomValidation()
 
-    display_name = StringField('Display Name (what we know you as)', validators=[
+    display_name = StringField('Display Name / Public-Facing Name', validators=[
             validators.DataRequired("Please provide a display name."),
         ], render_kw={'autocomplete': "nickname"}
     )
-    first_name = StringField('First Name', validators=[
+    first_name = StringField('Administrative First Name', validators=[
         validators.DataRequired("Please provide your first name.")
         ], render_kw={'autocomplete': "fname"})
-    last_name = StringField('Last Name', validators=[
+    last_name = StringField('Administrative Last Name', validators=[
         validators.DataRequired("Please provide your last name.")
         ], render_kw={'autocomplete': "lname"})
     same_legal_name = BooleanField('The above name is exactly what appears on my Legal Photo ID.')
@@ -513,7 +513,7 @@ class AdminBadgeFlags(BadgeFlags):
                 if not existing.count():
                     return
                 else:
-                    existing_name = existing.first().full_name
+                    existing_name = existing.first().display_name
             raise ValidationError('That badge number already belongs to {!r}'.format(existing_name))
 
     def get_valid_groups():
@@ -566,7 +566,7 @@ class CheckInForm(MagForm):
                 if not existing.count():
                     return
                 else:
-                    existing_name = existing.first().full_name
+                    existing_name = existing.first().display_name
             raise ValidationError('That badge number already belongs to {!r}'.format(existing_name))
 
     @field_validation.birthdate

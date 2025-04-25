@@ -34,7 +34,7 @@
   {% endif %}
   <li class="nav-item" role="presentation">
     <a href="../preregistration/confirm?id={{ attendee.id }}" class="nav-link{% if 'confirm' in c.PAGE_PATH %} active{% endif %}">
-      <i class="fa fa-user"></i> {{ attendee.full_name }}'s Info
+      <i class="fa fa-user"></i> {{ attendee.display_name }}'s Info
     </a>
   </li>
 {% for group in attendee.promo_code_groups %}

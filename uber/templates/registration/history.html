@@ -1,5 +1,5 @@
 {% extends "base.html" %}{% set admin_area=True %}
-{% block title %}Attendee History - {{ attendee.full_name }}{% endblock %}
+{% block title %}Attendee History - {{ attendee.display_name }}{% endblock %}
 {% block content %}
 {% include "registration/menu.html" %}
 {% include "model_history_base.html" %}

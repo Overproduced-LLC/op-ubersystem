@@ -104,9 +104,9 @@
           class="btn btn-sm btn-inherent_role btn-{% if not is_dept_head %}outline-{% endif %}secondary"
           data-role="dept_head"
           {% if is_dept_head %}
-            title="Remove {{ attendee.full_name }} as a department head of the {{ department.name }} department"
+            title="Remove {{ attendee.display_name }} as a department head of the {{ department.name }} department"
           {% else %}
-            title="Make {{ attendee.full_name }} a department head of the {{ department.name }} department"
+            title="Make {{ attendee.display_name }} a department head of the {{ department.name }} department"
           {% endif %}>
         <i class="fa fa-user"></i>
       </button>{%- endif -%}
@@ -115,9 +115,9 @@
           class="btn btn-sm btn-inherent_role btn-{% if not is_poc %}outline-{% endif %}secondary"
           data-role="poc"
           {% if is_poc %}
-            title="Remove {{ attendee.full_name }} as a point of contact of the {{ department.name }} department"
+            title="Remove {{ attendee.display_name }} as a point of contact of the {{ department.name }} department"
           {% else %}
-            title="Make {{ attendee.full_name }} a point of contact of the {{ department.name }} department"
+            title="Make {{ attendee.display_name }} a point of contact of the {{ department.name }} department"
           {% endif %}>
         <i class="fa fa-envelope"></i>
       </button>{#- strip whitespace -#}
@@ -126,9 +126,9 @@
           class="btn btn-sm btn-inherent_role btn-{% if not is_checklist_admin %}outline-{% endif %}secondary"
           data-role="checklist_admin"
           {% if is_checklist_admin %}
-            title="Remove {{ attendee.full_name }} as a checklist admin of the {{ department.name }} department"
+            title="Remove {{ attendee.display_name }} as a checklist admin of the {{ department.name }} department"
           {% else %}
-            title="Make {{ attendee.full_name }} a checklist admin of the {{ department.name }} department"
+            title="Make {{ attendee.display_name }} a checklist admin of the {{ department.name }} department"
           {% endif %}>
         <i class="fa fa-edit"></i>
       </button>
@@ -445,8 +445,8 @@
                 {%- set hours_here = attendee.weighted_hours_in(department) -%}
                 {%- set weighted_hours = attendee.weighted_hours -%}
                 <tr>
-                  <td data-order="{{ attendee.full_name }}" data-search="{{ attendee.full_name }}">
-                    <a href="#attendee_form?id={{ attendee.id }}">{{ attendee.full_name }}</a>
+                  <td data-order="{{ attendee.display_name }}" data-search="{{ attendee.display_name }}">
+                    <a href="#attendee_form?id={{ attendee.id }}">{{ attendee.display_name }}</a>
                   </td>
                   <td>{{ attendee.badge }}</td>
                   <td>{{ attendee.paid_label }}</td>
@@ -472,7 +472,7 @@
                           action="unassign_member"
                           role="form"
                           onsubmit="return confirm('Are you sure you want to remove this attendee from the department?');"
-                          title="Remove {{ attendee.full_name }} from the {{ department.name }} department">
+                          title="Remove {{ attendee.display_name }} from the {{ department.name }} department">
                         {{ csrf_token() }}
                         <input type="hidden" name="department_id" value="{{ department.id }}" />
                         <input type="hidden" name="attendee_id" value="{{ attendee.id }}" />

@@ -45,7 +45,7 @@
             {% elif cls == 'Group' %}
             <td data-order="{{ model.name }}" data-search="{{ model.name }}">
             {% elif model.attendee %}
-            <td data-order="{{ model.attendee.full_name }}" data-search="{{ model.attendee.full_name }}">
+            <td data-order="{{ model.attendee.display_name }}" data-search="{{ model.attendee.display_name }}">
             {% endif %}
               {{ model|form_link(new_window=True) }}
             </td>

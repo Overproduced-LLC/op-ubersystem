@@ -474,7 +474,7 @@ class Root:
             format='html',
             model=member.to_dict('id'))
         raise HTTPRedirect('room_group?id={}&message={}', application.id,
-                           f"{member.attendee.full_name} has been removed from your room group.")
+                           f"{member.attendee.display_name} has been removed from your room group.")
     
     @requires_account(LotteryApplication)
     def delete_group(self, session, id=None, message="", **params):

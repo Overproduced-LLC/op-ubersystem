@@ -71,7 +71,7 @@ def check_duplicate_registrations():
                         .filter(Attendee.badge_status == c.COMPLETED_STATUS).options(joinedload(Attendee.group)) \
                         .order_by(Attendee.registered):
                     if not a.group or (a.group.status not in [c.WAITLISTED, c.UNAPPROVED]):
-                        grouped[a.full_name, a.email.lower()].append(a)
+                        grouped[a.display_name, a.email.lower()].append(a)
 
                 dupes = {k: v for k, v in grouped.items() if len(v) > 1}
 
@@ -121,7 +121,7 @@ def check_placeholder_registrations():
                                                    Attendee.badge_status.in_([c.NEW_STATUS, c.COMPLETED_STATUS]),
                                                    per_email_filter)
                                            .options(joinedload(Attendee.group))
-                                           .order_by(Attendee.registered, Attendee.full_name).all())
+                                           .order_by(Attendee.registered, Attendee.display_name).all())
                     if placeholders:
                         body = render('emails/daily_checks/placeholders.html',
                                       {'placeholders': placeholders}, encoding=None)
@@ -151,7 +151,7 @@ def check_unassigned_volunteers():
                 Attendee.staffing == True,  # noqa: E712
                 Attendee.badge_status != c.REFUNDED_STATUS,
                 Attendee.is_unassigned == False,  # noqa: E712
-                not_(Attendee.dept_memberships.any())).order_by(Attendee.full_name).all()  # noqa: E712
+                not_(Attendee.dept_memberships.any())).order_by(Attendee.display_name).all()  # noqa: E712
             subject = c.EVENT_NAME + ' Unassigned Volunteer Report for ' + localized_now().strftime('%Y-%m-%d')
             if unassigned and session.no_email(subject):
                 body = render('emails/daily_checks/unassigned.html', {'unassigned': unassigned}, encoding=None)
@@ -362,7 +362,7 @@ def process_terminal_sale(workstation_num, terminal_id, model_id=None, pickup_gr
                     if receipt.current_amount_owed:
                         receipts.append(receipt)
                         txn_total += receipt.current_amount_owed
-                        attendee_names_list.append(attendee.full_name +
+                        attendee_names_list.append(attendee.display_name +
                                                    (f" ({attendee.badge_printed_name})"
                                                     if attendee.badge_printed_name else ""))
             except Exception as e:

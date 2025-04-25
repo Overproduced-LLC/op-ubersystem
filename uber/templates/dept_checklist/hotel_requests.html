@@ -76,7 +76,7 @@ Please select a department above to view its hotel requests.
 
 {% for request in requests %}
     <tr bgcolor="{{ loop.cycle('#FFFFFF','#DDDDDD') }}">
-        <td><a href="#attendee_form?id={{ request.attendee.id }}">{{ request.attendee.full_name }}</a></td>
+        <td><a href="#attendee_form?id={{ request.attendee.id }}">{{ request.attendee.display_name }}</a></td>
         <td>{{ request.attendee.assigned_depts_labels|join(" / ") }}</td>
         {% if admin_has_room_access %}
           <td>{{ request.wanted_roommates|linebreaksbr }}</td>

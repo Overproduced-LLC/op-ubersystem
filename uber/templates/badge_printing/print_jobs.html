@@ -22,7 +22,7 @@
     <td data-order="{{ job.created }}">{{ job.created|time_day_local }}</td>
     <td>{{ job.id }}</td>
     {% if not attendee %}
-    <td data-order="{{ job.attendee.full_name }}" data-search="{{ job.attendee.full_name }}">
+    <td data-order="{{ job.attendee.display_name }}" data-search="{{ job.attendee.display_name }}">
         {{ job.attendee|form_link }}
     </td>
     {% endif %}

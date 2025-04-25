@@ -51,7 +51,7 @@ Please select a department above to view its signups.
       <select id="attendee" class="form-select">
           <option value="">Select a volunteer</option>
           {% for attendee in attendees %}
-              <option value="{{ attendee.id }}">{{ attendee.full_name }}</option>
+              <option value="{{ attendee.id }}">{{ attendee.display_name }}</option>
           {% endfor %}
       </select>
   </div>

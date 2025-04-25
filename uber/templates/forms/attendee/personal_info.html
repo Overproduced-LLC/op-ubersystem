@@ -31,7 +31,7 @@
                    checked=attendee.first_name != '' and attendee.legal_name == '') }}
   </div>
 
-  <div class="col-12 col-sm-6">{{ form_macros.form_input(personal_info.legal_name, help_text=macros.popup_link("../static_views/legal_name.html", 'What does "Legal Photo ID" mean?')) }}
+  <div class="col-12 col-sm-6">{{ form_macros.form_input(personal_info.legal_name, help_text=macros.popup_link("../static_views/legal_name.html", 'What does Administrative / Legal name mean and how is my name used?')) }}
   </div>
 </div>
 {% else %}
@@ -130,7 +130,7 @@
   </div>
   <div class="col-12 col-sm-6">
     <div class="alert alert-info" role="alert">
-    Please provide names and contact info for a trusted friend or friends who will be at or near the venue during the event.
+    Please provide names and contact info for a trusted friend or friends who will be at or near the venue during the event. If you do not have an onsite contact, you can put 'My Roommate', or 'My Liason Contact' and be assigned a contact. 
     </div>
   </div>
 </div>

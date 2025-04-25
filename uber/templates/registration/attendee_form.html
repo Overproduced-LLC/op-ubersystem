@@ -80,7 +80,7 @@ loadForm("{{ tab_view }}");
 {% endif %}
 </script>
 <div class="modal-header">
-  <h4 class="modal-title">Attendee Form{% if attendee.first_name %} - {{ attendee.full_name }}{% endif %}</h4>
+  <h4 class="modal-title">Attendee Form{% if attendee.first_name %} - {{ attendee.display_name }}{% endif %}</h4>
   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
   </div>
   <div class="modal-body">

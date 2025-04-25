@@ -25,7 +25,7 @@
                     <li>
                         {{ mpu.amount|format_currency }} from
                         {% if mpu.attendee %}
-                            <a href="#attendee_form?id={{ mpu.attendee.id }}">{{ mpu.attendee.full_name }}</a>
+                            <a href="#attendee_form?id={{ mpu.attendee.id }}">{{ mpu.attendee.display_name }}</a>
                         {% else %}
                             {{ mpu.identifier }}
                         {% endif %}

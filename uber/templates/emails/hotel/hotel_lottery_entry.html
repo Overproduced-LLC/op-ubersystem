@@ -4,7 +4,7 @@
 <head></head>
 <body>
 <p>
-    {{ application.attendee.full_name }},<br/>
+    {{ application.attendee.display_name }},<br/>
     Thank you for {{ action_str }} for {{ c.EVENT_NAME_AND_YEAR }}! Your {% if application.entry_type == c.SUITE_ENTRY %} suite{% elif application.entry_type == c.GROUP_ENTRY %} group's{% endif %} entry details are below.
 </p>
 {% if new_conf %}

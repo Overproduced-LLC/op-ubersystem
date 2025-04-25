@@ -1,5 +1,5 @@
 {% extends "./preregistration/preregbase.html" %}
-{% set title_text = "Hotel Lottery Applications for " ~ application.attendee.full_name %}
+{% set title_text = "Hotel Lottery Applications for " ~ application.attendee.display_name %}
 {% set app_or_parent = application.parent_application or application %}
 {% set app_locked = application.is_staff_entry and not c.STAFF_HOTEL_LOTTERY_OPEN or c.AFTER_HOTEL_LOTTERY_FORM_DEADLINE %}
 
@@ -56,7 +56,7 @@
     })
 </script>
 
-<h1>{{ c.EVENT_NAME }}{% if c.BEFORE_HOTEL_LOTTERY_FORM_START %} Staff{% endif %} Hotel Lottery <span class="text-muted h4">for {{ application.attendee.full_name }}</span></h1>
+<h1>{{ c.EVENT_NAME }}{% if c.BEFORE_HOTEL_LOTTERY_FORM_START %} Staff{% endif %} Hotel Lottery <span class="text-muted h4">for {{ application.attendee.display_name }}</span></h1>
 <div class="card">
     <div class="card-body">
         <div id="select-action" class="collapse">

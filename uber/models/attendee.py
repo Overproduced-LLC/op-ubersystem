@@ -155,14 +155,14 @@ class Attendee(MagModel, TakesPaymentMixin):
     
     badge_pickup_group_id = Column(UUID, ForeignKey('badge_pickup_group.id', ondelete='SET NULL'), nullable=True)
     badge_pickup_group = relationship(
-        'BadgePickupGroup', backref=backref('attendees', order_by='Attendee.full_name'), foreign_keys=badge_pickup_group_id,
+        'BadgePickupGroup', backref=backref('attendees', order_by='Attendee.display_name'), foreign_keys=badge_pickup_group_id,
         cascade='save-update,merge,refresh-expire,expunge', single_parent=True)
 
     creator_id = Column(UUID, ForeignKey('attendee.id'), nullable=True)
     creator = relationship(
         'Attendee',
         foreign_keys='Attendee.creator_id',
-        backref=backref('created_badges', order_by='Attendee.full_name'),
+        backref=backref('created_badges', order_by='Attendee.display_name'),
         cascade='save-update,merge,refresh-expire,expunge',
         remote_side='Attendee.id',
         single_parent=True)
@@ -371,7 +371,7 @@ class Attendee(MagModel, TakesPaymentMixin):
                       'DeptMembership.is_poc == True)',
         secondary='join(Shift, Job).join(DeptMembership, '
                   'DeptMembership.department_id == Job.department_id)',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         viewonly=True)
     dept_heads_for_depts_where_working = relationship(
         'Attendee',
@@ -381,7 +381,7 @@ class Attendee(MagModel, TakesPaymentMixin):
                       'DeptMembership.is_dept_head == True)',
         secondary='join(Shift, Job).join(DeptMembership, '
                   'DeptMembership.department_id == Job.department_id)',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         viewonly=True)
 
     staffing = Column(Boolean, default=False)
@@ -435,7 +435,7 @@ class Attendee(MagModel, TakesPaymentMixin):
         _attendee_table_args.append(UniqueConstraint('badge_num', deferrable=True, initially='DEFERRED'))
 
     __table_args__ = tuple(_attendee_table_args)
-    _repr_attr_names = ['full_name']
+    _repr_attr_names = ['display_name']
 
     def to_dict(self, *args, **kwargs):
         # Kludgey fix for SQLAlchemy breaking our stuff

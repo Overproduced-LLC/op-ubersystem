@@ -2,7 +2,7 @@
 <head></head>
 <body>
 
-You ({{ attendee.full_name }}) have preregistered for {{ c.EVENT_NAME_AND_YEAR }} this coming {{ event_dates() }}
+You ({{ attendee.display_name }}) have preregistered for {{ c.EVENT_NAME_AND_YEAR }} this coming {{ event_dates() }}
 {% if attendee.promo_code_id %}
     using promotional code {{ attendee.promo_code.code }}
 {% endif %}
@@ -16,13 +16,16 @@ You ({{ attendee.full_name }}) have preregistered for {{ c.EVENT_NAME_AND_YEAR }
 {% else %}
     and your payment of {{ (attendee.amount_paid / 100)|format_currency }} has been received.
 {% endif %}
-Your registration confirmation number is {{ attendee.id }}, and you can update your information, preorder merch, or donate
-extra money <a href="{{ c.URL_BASE }}/preregistration/confirm?id={{ attendee.id }}">here</a>.
+Your registration confirmation number is {{ attendee.id }}, and you can update your information <a href="{{ c.URL_BASE }}/preregistration/confirm?id={{ attendee.id }}">here</a>.
 
 {% if attendee.is_group_leader %}
     If you don't remember claiming a badge, it may have been created for you by {{ c.EVENT_NAME }} staff. Please
     check your information to make sure it is correct.
 {% endif %}
+
+<br/> <br/>
+
+Please join the {{ c.EVENT_NAME }} Private Discord server. Here you can ask questions, get updates, coordinate travel plans, and connect with other attendees. You can join the server using <a href="{{c.DISCORD_LINK}}">this invite link</a>.
 
 <br/> <br/>
 

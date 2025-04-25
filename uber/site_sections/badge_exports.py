@@ -69,7 +69,7 @@ class Root:
             out,
             session,
             Attendee.amount_extra >= c.SUPPORTER_LEVEL,
-            order_by=Attendee.full_name,
+            order_by=Attendee.display_name,
             badge_type_override=lambda a: 'Super Supporter' if a.amount_extra >= c.SEASON_LEVEL else 'Supporter')
 
     """

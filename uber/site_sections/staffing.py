@@ -337,7 +337,7 @@ class Root:
         attendee = session.logged_in_volunteer()
         icalendar = ics.Calendar()
 
-        calname = "".join(filter(str.isalnum, attendee.full_name)) + "_Shifts"
+        calname = "".join(filter(str.isalnum, attendee.display_name)) + "_Shifts"
 
         for shift in attendee.shifts:
             icalendar.events.add(ics.Event(

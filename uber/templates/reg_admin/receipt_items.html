@@ -8,7 +8,7 @@
   {% set model = attendee %}
 {% endif %}
 
-{% block title %}Receipt Items - {% if model.attendee %}{{ model.attendee.full_name }}'s {{ model_str|title }}{% else %}{{ model.full_name|default(model.name) }}{% endif %}{% endblock %}
+{% block title %}Receipt Items - {% if model.attendee %}{{ model.attendee.display_name }}'s {{ model_str|title }}{% else %}{{ model.full_name|default(model.name) }}{% endif %}{% endblock %}
 {% block content %}
 <style>label {
   display:block;
@@ -741,7 +741,7 @@
 
 <h2>
   Receipt Items for 
-  {% if model.attendee %}{{ model.attendee.full_name }}'s {{ model_str|title }}{% else %}{{ model.full_name|default(model.name) }}{% endif %}
+  {% if model.attendee %}{{ model.attendee.display_name }}'s {{ model_str|title }}{% else %}{{ model.full_name|default(model.name) }}{% endif %}
   {% if c.AT_THE_CON and model.badge_num %} ({{ model.badge }}){% endif %}
 </h2>
 

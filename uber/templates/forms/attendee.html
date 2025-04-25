@@ -541,7 +541,7 @@ $().ready(function() {
 </script>
 <div class="form-group">
   <label for="first_name" class="col-sm-3 control-label">Name</label>
-  {% call macros.read_only_if(read_only, attendee.masked_name if limited_read else attendee.full_name) %}
+  {% call macros.read_only_if(read_only, attendee.masked_name if limited_read else attendee.display_name) %}
     <div class="col-sm-3">
       <input type="text" name="first_name" id="first_name" value="{{ attendee.first_name }}" class="form-control" placeholder="First Name" autocomplete="fname">
     </div>
@@ -1264,7 +1264,7 @@ $(window).on("runJavaScript", function () {
           event.preventDefault();
           bootbox.confirm({
               backdrop: true,
-              title: 'Remove "{{ attendee.promo_code_code }}" from "{{ attendee.full_name }}"?',
+              title: 'Remove "{{ attendee.promo_code_code }}" from "{{ attendee.display_name }}"?',
               message: 'This will remove the promo code\'s discount from the attendee and ' +
               'set them to unpaid. They will be asked to pay the difference to complete their registration.',
               buttons: {

@@ -1,5 +1,5 @@
 {% extends "base.html" %}{% set admin_area=True %}
-{% block title %}API Access{% if not admin_account.is_super_admin %} for {{ admin_account.attendee.full_name }}{% endif %}{% endblock %}
+{% block title %}API Access{% if not admin_account.is_super_admin %} for {{ admin_account.attendee.display_name }}{% endif %}{% endblock %}
 
 {% block content %}
 
@@ -132,8 +132,8 @@
             <tr>
               {% if admin_account.is_super_admin %}
                 <td
-                    data-order="{{ token.admin_account.attendee.full_name }}"
-                    data-search="{{ token.admin_account.attendee.full_name }}">
+                    data-order="{{ token.admin_account.attendee.display_name }}"
+                    data-search="{{ token.admin_account.attendee.display_name }}">
                   {{ token.admin_account.attendee|form_link }}
                 </td>
               {% endif %}

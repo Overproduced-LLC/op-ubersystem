@@ -111,7 +111,7 @@ class Root:
     def extra_merch(self, session):
         return {
             'attendees': session.valid_attendees().filter(
-                Attendee.extra_merch != '').order_by(Attendee.full_name).all()}
+                Attendee.extra_merch != '').order_by(attendee.display_name).all()}
 
     def owed_merch(self, session):
         return {
@@ -139,7 +139,7 @@ class Root:
                                                      Attendee.got_merch == False)  # noqa: E712
         for attendee in attendees:
             out.writerow([
-                attendee.full_name,
+                attendee.display_name,
                 attendee.legal_name,
                 attendee.email,
                 attendee.merch,

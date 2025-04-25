@@ -69,11 +69,11 @@ def badge_consistency_check(session):
     for attendee in attendees:
         out_of_range_error = check_range(attendee.badge_num, attendee.badge_type)
         if out_of_range_error:
-            msg = '{a.full_name}: badge #{a.badge_num}: {err}'.format(a=attendee, err=out_of_range_error)
+            msg = '{a.display_name}: badge #{a.badge_num}: {err}'.format(a=attendee, err=out_of_range_error)
             errors.append(msg)
 
         if attendee.badge_num in badge_nums_seen:
-            msg = '{a.full_name}: badge #{a.badge_num}: Has been assigned the same badge number ' \
+            msg = '{a.display_name}: badge #{a.badge_num}: Has been assigned the same badge number ' \
                   'of another badge, which is not supposed to happen'.format(a=attendee)
             errors.append(msg)
 
@@ -91,18 +91,18 @@ def badge_consistency_check(session):
         for attendee in attendees:
             if prev_badge_num == -1:
                 prev_badge_num = attendee.badge_num
-                prev_attendee_name = attendee.full_name
+                prev_attendee_name = attendee.display_name
                 continue
 
             if attendee.badge_num - 1 != prev_badge_num:
                 msg = "gap in badge sequence between " + badge_type_desc + " " + \
                       "badge# " + str(prev_badge_num) + "(" + prev_attendee_name + ")" + " and " + \
-                      "badge# " + str(attendee.badge_num) + "(" + attendee.full_name + ")"
+                      "badge# " + str(attendee.badge_num) + "(" + attendee.display_name + ")"
 
                 errors.append(msg)
 
             prev_badge_num = attendee.badge_num
-            prev_attendee_name = attendee.full_name
+            prev_attendee_name = attendee.display_name
 
     return errors
 

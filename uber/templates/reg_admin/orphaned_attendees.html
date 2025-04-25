@@ -41,7 +41,7 @@
         <tr id="{{ attendee.id }}">
             <td><input type="checkbox" name="account-row" value="{{ attendee.id }}">
             </td>
-            <td data-order="{{ attendee.full_name }}" data-search="{{ attendee.full_name }}">
+            <td data-order="{{ attendee.display_name }}" data-search="{{ attendee.display_name }}">
                 {{ attendee|form_link }}
             </td>
             <td>

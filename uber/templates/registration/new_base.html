@@ -231,7 +231,7 @@
         {% block tablerows scoped %}
         <td>{{ attendee.registered|datetime_local("%b %-d %-H:%M (%-I:%M%p)") }}</td>
         <td align="left">
-            <a href="form?return_to=new%3f&id={{ attendee.id }}">{{ attendee.full_name }}</a>
+            <a href="form?return_to=new%3f&id={{ attendee.id }}">{{ attendee.display_name }}</a>
             {% if attendee.banned %}
                 <div style="color:red">There is a problem with this registration. Please contact your department head.</div>
             {% endif %}

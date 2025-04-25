@@ -121,7 +121,7 @@
     <tbody>
       {% for attendee in group.attendees %}
         <tr>
-          <td style="padding:15px;"> <a href="#attendee_form?id={{ attendee.id }}">{{ attendee.full_name }}</a> </td>
+          <td style="padding:15px;"> <a href="#attendee_form?id={{ attendee.id }}">{{ attendee.display_name }}</a> </td>
           <td>{{ attendee.paid_label }}</td>
           <td>{{ attendee.badge }}</td>
           <td>

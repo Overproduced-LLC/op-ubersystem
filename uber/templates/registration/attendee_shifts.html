@@ -61,7 +61,7 @@
     });
 </script>
 
-<h2>{{ attendee.full_name }} {% if c.AT_THE_CON and attendee.badge_num %}({{ attendee.badge }}){% endif %}</h2>
+<h2>{{ attendee.display_name }} {% if c.AT_THE_CON and attendee.badge_num %}({{ attendee.badge }}){% endif %}</h2>
 
 <table width="100%">
 <tr>
@@ -92,7 +92,7 @@
 
 {% if attendee.shifts %}
     <b>
-        Shifts signed up for by {{ attendee.full_name }}
+        Shifts signed up for by {{ attendee.display_name }}
         {% if c.AT_THE_CON or c.BADGE_PICKUP_ENABLED %}
             {% if attendee.checked_in %}
                 <i>[checked in]</i>
@@ -144,7 +144,7 @@
       </tbody>
     </table>
 {% else %}
-    <i>{{ attendee.full_name }} is not signed up for any shifts.</i>
+    <i>{{ attendee.display_name }} is not signed up for any shifts.</i>
 {% endif %}
 
 {% if attendee.dept_memberships_with_dept_role %}

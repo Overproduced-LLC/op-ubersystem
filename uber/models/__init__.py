@@ -1546,7 +1546,7 @@ class Session(SessionManager):
                     subqueryload(Attendee.group),
                     subqueryload(Attendee.shifts).subqueryload(Shift.job).subqueryload(Job.department),
                     subqueryload(Attendee.room_assignments)) \
-                .order_by(Attendee.full_name, Attendee.id)
+                .order_by(Attendee.display_name, Attendee.id)
 
         def staffers(self, pending=False):
             return self.all_attendees(only_staffing=True, pending=pending)
@@ -1563,17 +1563,17 @@ class Session(SessionManager):
                 .order_by(Job.start_time, Job.name)
 
         def staffers_for_dropdown(self):
-            query = self.query(Attendee.id, Attendee.full_name)
+            query = self.query(Attendee.id, Attendee.display_name)
             return [
-                {'id': id, 'full_name': full_name.title()}
-                for id, full_name in query.filter_by(staffing=True).order_by(Attendee.full_name)]
+                {'id': id, 'display_name': display_name.title()}
+                for id, display_name in query.filter_by(staffing=True).order_by(Attendee.display_name)]
 
         @department_id_adapter
         def dept_heads(self, department_id=None):
             if department_id:
                 return self.query(Department).get(department_id).dept_heads
             return self.query(Attendee).filter(Attendee.dept_memberships.any(is_dept_head=True)) \
-                .order_by(Attendee.full_name).all()
+                .order_by(Attendee.display_name).all()
 
         def match_to_group(self, attendee, group):
             available = [a for a in group.attendees if a.is_unassigned]

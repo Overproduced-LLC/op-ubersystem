@@ -4,7 +4,7 @@
 <head></head>
 <body>
 <p>
-    {{ application.attendee.full_name }},<br/>
+    {{ application.attendee.display_name }},<br/>
     This is to let you know that your group leader has updated your group's {% if app_or_parent.entry_type == c.SUITE_ENTRY %} suite{% endif %} lottery entry. Your group's updated details are below.
 </p>
 {% set confirmation = False %}

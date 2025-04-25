@@ -758,7 +758,7 @@ class AttendeeAccountLookup:
 
                 attendees = {}
                 for attendee in a.attendees:
-                    attendees[attendee.id] = attendee.full_name + " <{}>".format(attendee.email)
+                    attendees[attendee.id] = attendee.display_name + " <{}>".format(attendee.email)
 
                 d.update({
                     'attendees': attendees,
@@ -1002,7 +1002,7 @@ class GroupLookup:
                 attendees = {}
                 for attendee in g.attendees:
                     if not attendee.is_unassigned:
-                        attendees[attendee.id] = attendee.full_name + " <{}>".format(attendee.email)
+                        attendees[attendee.id] = attendee.display_name + " <{}>".format(attendee.email)
 
                 d.update({
                     'assigned_attendees': attendees,

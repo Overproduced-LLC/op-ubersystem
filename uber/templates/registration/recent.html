@@ -15,7 +15,7 @@
     {% for attendee in attendees %}
     <tr>
         <td> {{ attendee.registered|datetime_local }} </td>
-        <td> <a href="form?id={{ attendee.id }}">{{ attendee.full_name }}</a> </td>
+        <td> <a href="form?id={{ attendee.id }}">{{ attendee.display_name }}</a> </td>
         <td>
             {{ attendee.badge_type_label }}
             {% if attendee.group_id %}

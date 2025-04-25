@@ -81,7 +81,7 @@ class HotelRequests(MagModel, NightsMixin):
         self.attendee.presave_adjustments()
 
     def __repr__(self):
-        return '<{self.attendee.full_name} Hotel Requests>'.format(self=self)
+        return '<{self.attendee.display_name} Hotel Requests>'.format(self=self)
 
 
 class Room(MagModel, NightsMixin):
@@ -237,7 +237,7 @@ class LotteryApplication(MagModel):
         
     @property
     def attendee_name(self):
-        return self.attendee.full_name if self.attendee else "[DISASSOCIATED]"
+        return self.attendee.display_name if self.attendee else "[DISASSOCIATED]"
 
     @property
     def current_status_str(self):

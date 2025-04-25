@@ -190,7 +190,7 @@ class Root:
         out.writerow(headers)
         for attendee in requesting_attendees:
             if attendee.is_valid:
-                row = [attendee.full_name, attendee.email, attendee.badge, yesno(attendee.placeholder, 'Yes,No')]
+                row = [attendee.display_name, attendee.email, attendee.badge, yesno(attendee.placeholder, 'Yes,No')]
                 if requested_any:
                     row.append(yesno(attendee in department.unassigned_explicitly_requesting_attendees, 'Yes,No'))
 
@@ -205,7 +205,7 @@ class Root:
 
         out.writerow(headers)
         for attendee in department.members:
-            row = [attendee.full_name, attendee.legal_name, attendee.email, attendee.cellphone,
+            row = [attendee.display_name, attendee.legal_name, attendee.email, attendee.cellphone,
                    attendee.ec_name + ": " + attendee.ec_phone,
                    attendee.weighted_hours_in(department),
                    attendee.badge_status_label,
@@ -237,7 +237,7 @@ class Root:
                     if dept_limit > 0 and minutes_worked > dept_limit:
                         departments_overworked.add(minute_map[current_minute].department_name)
                     current_minute = current_minute + timedelta(minutes=1)
-                out.writerow([attendee.full_name,
+                out.writerow([attendee.display_name,
                               start_minute.astimezone(c.EVENT_TIMEZONE),
                               minutes_worked] +
                              list(departments_overworked))
@@ -329,7 +329,7 @@ class Root:
             if membership:
                 session.delete(membership)
                 message = '{} successfully unassigned from this ' \
-                    'department'.format(membership.attendee.full_name)
+                    'department'.format(membership.attendee.display_name)
             else:
                 message = 'That attendee is not a member of this department'
 
@@ -350,13 +350,13 @@ class Root:
 
             if membership:
                 message = '{} is already a member of this ' \
-                    'department'.format(membership.attendee.full_name)
+                    'department'.format(membership.attendee.display_name)
             else:
                 session.add(DeptMembership(
                     department_id=department_id, attendee_id=attendee_id))
                 attendee = session.query(Attendee).get(attendee_id)
                 message = '{} successfully added as a member of this ' \
-                    'department'.format(attendee.full_name)
+                    'department'.format(attendee.display_name)
 
             raise HTTPRedirect('form?id={}&message={}', department_id, message)
 

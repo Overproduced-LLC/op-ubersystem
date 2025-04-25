@@ -1,4 +1,4 @@
-{{ account.attendee.full_name }},
+{{ account.attendee.display_name }},
 
 {{ creator }} has created an admin account for you on the {{ c.EVENT_NAME }} registration system.
 

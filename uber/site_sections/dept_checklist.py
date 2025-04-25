@@ -131,7 +131,7 @@ class Root:
                 checklist_item = dept.checklist_item_for_slug(item.slug)
                 if checklist_item:
                     status['done'] = True
-                    status['completed_by'] = checklist_item.attendee.full_name
+                    status['completed_by'] = checklist_item.attendee.display_name
                 elif days_before(7, item.deadline)():
                     status['approaching'] = True
                 elif item.deadline < datetime.now(UTC):
@@ -222,9 +222,9 @@ class Root:
             item = dept.checklist_item_for_slug(conf.slug)
             out.writerow([
                 "Yes" if item else "No",
-                item.attendee.full_name if item else 'N/A',
+                item.attendee.display_name if item else 'N/A',
                 linebreaksbr(item.comments) if item else 'N/A',
-                ', '.join([a.full_name for a in dept.checklist_admins])
+                ', '.join([a.display_name for a in dept.checklist_admins])
             ])
 
     @department_id_adapter
@@ -244,7 +244,7 @@ class Root:
                 Attendee.placeholder == True,  # noqa: E712
                 Attendee.staffing == True,  # noqa: E712
                 Attendee.badge_status.in_([c.NEW_STATUS, c.COMPLETED_STATUS]),
-                *dept_filter).order_by(Attendee.full_name).all()  # noqa: E712
+                *dept_filter).order_by(Attendee.display_name).all()  # noqa: E712
 
         try:
             checklist = session.checklist_status('placeholders', department_id)
@@ -288,7 +288,7 @@ class Root:
             attendees = session.query(Attendee).filter(Attendee.hotel_eligible == True,  # noqa: E712
                                                        Attendee.badge_status.in_([c.NEW_STATUS, c.COMPLETED_STATUS]),
                                                        Attendee.dept_memberships.any(department_id=department_id)
-                                                       ).order_by(Attendee.full_name).all()
+                                                       ).order_by(Attendee.display_name).all()
 
         try:
             checklist = session.checklist_status('hotel_eligible', department_id)
@@ -323,7 +323,7 @@ class Root:
                 .filter(
                 Attendee.badge_status.in_([c.NEW_STATUS, c.COMPLETED_STATUS]),
                 *dept_filter) \
-                .order_by(Attendee.full_name).all()
+                .order_by(Attendee.display_name).all()
 
         attendee = session.admin_attendee()
 
@@ -348,7 +348,7 @@ class Root:
         staffers = session.query(Attendee) \
             .filter(Attendee.hotel_eligible == True, Attendee.badge_status.in_([c.NEW_STATUS, c.COMPLETED_STATUS])) \
             .options(joinedload(Attendee.hotel_requests), subqueryload(Attendee.shifts).subqueryload(Shift.job)) \
-            .order_by(Attendee.full_name).all()  # noqa: E712
+            .order_by(Attendee.display_name).all()  # noqa: E712
 
         return {'staffers': [s for s in staffers if s.hotel_shifts_required
                              and s.weighted_hours < c.HOURS_FOR_HOTEL_SPACE]}
@@ -358,7 +358,7 @@ class Root:
             joinedload(RoomAssignment.attendee).joinedload(Attendee.hotel_requests),
             joinedload(RoomAssignment.attendee).subqueryload(Attendee.room_assignments))
         staffers = [ra.attendee for ra in room_assignments if not ra.attendee.checked_in]
-        return {'staffers': sorted(staffers, key=lambda a: a.full_name)}
+        return {'staffers': sorted(staffers, key=lambda a: a.display_name)}
 
     @ajax
     def approve(self, session, id, approved):

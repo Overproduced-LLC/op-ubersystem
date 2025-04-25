@@ -124,11 +124,11 @@ def assign_account_by_email(session, attendee, account_email):
     if not account:
         set_up_new_account(session, attendee, account_email)
         session.commit()
-        return "New account made for {} under email {}.".format(attendee.full_name, account_email)
+        return "New account made for {} under email {}.".format(attendee.display_name, account_email)
     else:
         session.add_attendee_to_account(attendee, account)
         session.commit()
-        return "{} is now being managed by account {}.".format(attendee.full_name, account_email)
+        return "{} is now being managed by account {}.".format(attendee.display_name, account_email)
 
 
 @all_renderable()
@@ -712,7 +712,7 @@ class Root:
         if session.get_receipt_by_model(model) == receipt:
             refund_desc = f"Full Refund for {model.id}"
             if isinstance(model, Attendee):
-                refund_desc = f"Refunding and Cancelling {model.full_name}'s Badge",
+                refund_desc = f"Refunding and Cancelling {model.display_name}'s Badge",
             elif isinstance(model, Group):
                 refund_desc = f"Refunding and Cancelling Group {model.name}"
 
@@ -779,14 +779,14 @@ class Root:
                           if txn.amount_left >= group_refund_amount], key=lambda x: x.added)[0]
             if not txn:
                 message = f"{error_start} group leader could not be refunded because "\
-                    f"there wasn't a transaction with enough money left on it for {model.full_name}'s badge."
+                    f"there wasn't a transaction with enough money left on it for {model.display_name}'s badge."
                 raise HTTPRedirect('../reg_admin/receipt_items?id={}&message={}', attendee_id or group_id, message)
 
             session.add(ReceiptItem(
                 receipt_id=txn.receipt.id,
                 department=c.REG_RECEIPT_ITEM,
                 category=c.REFUND,
-                desc=f"Refunding {model.full_name}'s Promo Code",
+                desc=f"Refunding {model.display_name}'s Promo Code",
                 amount=-group_refund_amount,
                 who=AdminAccount.admin_name() or 'non-admin',
             ))
@@ -797,7 +797,7 @@ class Root:
                     receipt_id=txn.receipt.id,
                     department=c.OTHER_RECEIPT_ITEM,
                     category=c.PROCESSING_FEES,
-                    desc=f"Processing Fees for Refund of {model.full_name}'s Promo Code",
+                    desc=f"Processing Fees for Refund of {model.display_name}'s Promo Code",
                     amount=processing_fees,
                     who=AdminAccount.admin_name() or 'non-admin',
                 ))
@@ -824,7 +824,7 @@ class Root:
         raise HTTPRedirect('../reg_admin/receipt_items?id={}&message={}',
                            attendee_id or group_id,
                            "{}'s registration has been cancelled and they have been refunded {}.{}".format(
-                               getattr(model, 'full_name', None) or model.name, format_currency(refund_total / 100),
+                               getattr(model, 'display_name', None) or model.name, format_currency(refund_total / 100),
                                message_end
                                ))
 
@@ -1281,7 +1281,7 @@ class Root:
                     accounts_by_email.pop(existing_key, {})
                 accounts = list(chain(*accounts_by_email.values()))
                 admin_id = cherrypy.session.get('account_id')
-                admin_name = session.admin_attendee().full_name
+                admin_name = session.admin_attendee().display_name
                 import_attendee_accounts.delay(accounts, admin_id, admin_name, target_server, api_token)
                 message = f"{len(accounts)} attendee accounts queued for import." 
 
@@ -1323,7 +1323,7 @@ class Root:
                                query)
 
         admin_id = cherrypy.session.get('account_id')
-        admin_name = session.admin_attendee().full_name
+        admin_name = session.admin_attendee().display_name
         already_queued = 0
         attendee_ids = attendee_ids if isinstance(attendee_ids, list) else [attendee_ids]
 
@@ -1380,7 +1380,7 @@ class Root:
                                'groups')
 
         admin_id = cherrypy.session.get('account_id')
-        admin_name = session.admin_attendee().full_name
+        admin_name = session.admin_attendee().display_name
         already_queued = 0
         group_ids = group_ids if isinstance(group_ids, list) else [group_ids]
 

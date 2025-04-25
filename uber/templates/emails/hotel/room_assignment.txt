@@ -9,7 +9,7 @@ Your check-out is at {{ c.CHECK_OUT_TIME }} on {{ room.check_out_date|datetime("
 
 Here are the people assigned to this room, along with their contact information and what nights they'll be using the room:
 {% for ra in room.assignments %}
--> {{ ra.attendee.full_name }} ({{ ra.attendee.email }}){% if ra.attendee.cellphone %} [{{ ra.attendee.cellphone }}]{% endif %}: {{ ra.attendee.hotel_requests.nights_display }}
+-> {{ ra.attendee.display_name }} ({{ ra.attendee.email }}){% if ra.attendee.cellphone %} [{{ ra.attendee.cellphone }}]{% endif %}: {{ ra.attendee.hotel_requests.nights_display }}
 {% endfor %}
 
 If you are assigned to receive a room on a night before {{ c.CORE_NIGHT_NAMES|first }}, please make sure that you have signed up for a setup shift for each of those earlier days.  Similarly if you are staying on {{ c.TEARDOWN_NIGHT_NAMES|first }} night please sign up for a corresponding tear-down shift after {{ c.EVENT_NAME }}.  If you were expecting to work setup and/or teardown and there are no available shifts, please let us know.  You MUST sign up for setup and teardown shifts if you are working during setup and/or teardown.

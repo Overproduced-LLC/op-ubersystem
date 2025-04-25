@@ -22,7 +22,7 @@ try:
         if admin:
             # Make it easier to do site section testing at the command line
             cherrypy.session = {'account_id': admin.id}
-            print('Logged in as {} <{}>'.format(admin.attendee.full_name, admin.attendee.email))
+            print('Logged in as {} <{}>'.format(admin.attendee.display_name, admin.attendee.email))
         else:
             print('INFO: Could not find Test Developer admin account')
 

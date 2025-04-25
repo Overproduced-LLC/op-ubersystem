@@ -56,7 +56,7 @@
     {% for sale in sales %}
         <tr>
             <td>{{ sale.what }}</td>
-            <td><a href="./form?id={{ sale.attendee_id }}">{{ sale.attendee.full_name }}</a></td>
+            <td><a href="./form?id={{ sale.attendee_id }}">{{ sale.attendee.display_name }}</a></td>
             <td>{{ sale.payment_method_label }}</td>
             <td>{{ sale.cash|format_currency }}</td>
             <td>{{ sale.when }}</td>
@@ -73,7 +73,7 @@
     </tr>
     {% for attendee in attendees %}
         <tr>
-            <td><a href="#attendee_form?id={{ attendee.id }}">{{ attendee.full_name }}</a></td>
+            <td><a href="#attendee_form?id={{ attendee.id }}">{{ attendee.display_name }}</a></td>
             <td>{{ attendee.badge }}</td>
             <td>{{ (attendee.amount_paid / 100)|format_currency }}</td>
             <td>{{ attendee.registered }}</td>

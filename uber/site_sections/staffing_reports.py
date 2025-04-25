@@ -15,7 +15,7 @@ def volunteer_checklists(session):
         .filter(
             Attendee.staffing == True,  # noqa: E712
             Attendee.badge_status.in_([c.NEW_STATUS, c.COMPLETED_STATUS])) \
-        .order_by(Attendee.full_name, Attendee.id).all()
+        .order_by(attendee.display_name, Attendee.id).all()
 
     checklist_items = OrderedDict()
     for item_template in c.VOLUNTEER_CHECKLIST:
@@ -106,17 +106,17 @@ class Root:
 
     @csv_file
     def dept_head_contact_info(self, out, session):
-        out.writerow(["Full Name", "Email", "Phone", "Department(s)"])
+        out.writerow(["Display Name", "Email", "Phone", "Department(s)"])
         for a in session.query(Attendee).filter(Attendee.dept_memberships_as_dept_head.any()).order_by('last_name'):
             for label in a.assigned_depts_labels:
-                out.writerow([a.full_name, a.email, a.cellphone, label])
+                out.writerow([a.display_name, a.email, a.cellphone, label])
 
     @csv_file
     def volunteers_with_worked_hours(self, out, session):
-        out.writerow(['Badge #', 'Full Name', 'Email Address', 'Weighted Hours Scheduled', 'Weighted Hours Worked'])
+        out.writerow(['Badge #', 'Display Name', 'Email Address', 'Weighted Hours Scheduled', 'Weighted Hours Worked'])
         for a in session.staffers():
             if a.worked_hours > 0:
-                out.writerow([a.badge_num, a.full_name, a.email, a.weighted_hours, a.worked_hours])
+                out.writerow([a.badge_num, a.display_name, a.email, a.weighted_hours, a.worked_hours])
 
     def restricted_untaken(self, session):
         untaken = defaultdict(lambda: defaultdict(list))

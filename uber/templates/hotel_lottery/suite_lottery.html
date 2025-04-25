@@ -1,5 +1,5 @@
 {% extends "./preregistration/preregbase.html" %}
-{% set title_text = "Hotel Suite Lottery Application for " ~ application.attendee.full_name %}
+{% set title_text = "Hotel Suite Lottery Application for " ~ application.attendee.display_name %}
 {% import 'macros.html' as macros with context %}
 {% import 'forms/macros.html' as form_macros with context %}
 {% set suite_lottery = suite_lottery or forms['suite_lottery'] %}
@@ -7,7 +7,7 @@
 {% block content %}
 {% include 'hotel_lottery/withdraw_confirm.html' with context %}
 
-<h1>{{ c.EVENT_NAME }}{% if c.BEFORE_HOTEL_LOTTERY_FORM_START %} Staff{% endif %} Hotel Lottery <span class="text-muted h4">for {{ application.attendee.full_name }}</span></h1>
+<h1>{{ c.EVENT_NAME }}{% if c.BEFORE_HOTEL_LOTTERY_FORM_START %} Staff{% endif %} Hotel Lottery <span class="text-muted h4">for {{ application.attendee.display_name }}</span></h1>
 <div class="card">
     <div class="card-body">
         {{ form_macros.form_validation('suite-lottery-form', 'validate_hotel_lottery', form_list=['SuiteLottery'], callback="goToNextStep(response)", always_use_callback=False) }}

@@ -2,8 +2,8 @@
 <head></head>
 <body>
 <p>
-    {{ application.attendee.full_name }},<br/>
-    This is to notify you that {{ member.attendee.full_name }} has just joined your room group "{{ application.room_group_name }}".
+    {{ application.attendee.display_name }},<br/>
+    This is to notify you that {{ member.attendee.display_name }} has just joined your room group "{{ application.room_group_name }}".
     This brings the total number of group members, including yourself, to {{ application.group_members|length + 1 }}{% if application.group_members|length == 3 %} -- the total number of members you can have in a group{% endif %}.
 </p>
 <p>

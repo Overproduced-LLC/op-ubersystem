@@ -1,5 +1,5 @@
 {% extends "./preregistration/preregbase.html" %}
-{% set title_text = "Hotel Lottery Application for " ~ application.attendee.full_name %}
+{% set title_text = "Hotel Lottery Application for " ~ application.attendee.display_name %}
 {% import 'macros.html' as macros with context %}
 {% import 'forms/macros.html' as form_macros with context %}
 {% set lottery_room_group = lottery_room_group or forms['lottery_room_group'] %}
@@ -143,7 +143,7 @@
     })
 </script>
 
-<h1>{{ c.EVENT_NAME }}{% if c.BEFORE_HOTEL_LOTTERY_FORM_START %} Staff{% endif %} Hotel Lottery <span class="text-muted h4">for {{ application.attendee.full_name }}</span></h1>
+<h1>{{ c.EVENT_NAME }}{% if c.BEFORE_HOTEL_LOTTERY_FORM_START %} Staff{% endif %} Hotel Lottery <span class="text-muted h4">for {{ application.attendee.display_name }}</span></h1>
 <div class="card">
     <div class="card-body">
         <div id="select-action" class="collapse">
@@ -190,13 +190,13 @@
                         <table class="table table-borderless">
                             {% for member in application.group_members %}
                             <tr>
-                                <td>{{ member.attendee.full_name }}</td>
+                                <td>{{ member.attendee.display_name }}</td>
                                 <td>
                                     <form method="post" action="remove_group_member" id="remove-member">
                                         <input type="hidden" name="id" value="{{ application.id }}">
                                         {{ csrf_token() }}
                                         <input type="hidden" name="member_id" value="{{ member.id }}">
-                                        <input type="hidden" name="member_name" value="{{ member.attendee.full_name }}">
+                                        <input type="hidden" name="member_name" value="{{ member.attendee.display_name }}">
                                         {% if c.HOTEL_LOTTERY_OPEN %}
                                         <button type="submit" class="btn btn-sm btn-danger">
                                             Remove
@@ -276,7 +276,7 @@
             <div class="collapse" id="group-found">
                 <p>
                     We found the group "<span class='group-name'></span>" (confirmation number <strong><span class='conf-num'></span></strong>).
-                    This group's group leader is <span class='leader-name'></span> They will be able to see your first and last name ({{ application.attendee.full_name }}).
+                    This group's group leader is <span class='leader-name'></span> They will be able to see your first and last name ({{ application.attendee.display_name }}).
                 </p>
                 <form method="post" action="join_group" id="join-group-form">
                     <input type="hidden" name="id" value="{{ application.id }}">

@@ -202,7 +202,7 @@ class Root:
         if attendee.checked_in:
             # We skip this failure for badge printing since we still want the badge to get printed
             if not c.BADGE_PRINTING_ENABLED or attendee.times_printed > 0:
-                return {"error": {'': [attendee.full_name + ' was already checked in!']}}
+                return {"error": {'': [attendee.display_name + ' was already checked in!']}}
 
         if attendee.group and attendee.paid == c.PAID_BY_GROUP and attendee.group.amount_unpaid:
             return {
@@ -230,7 +230,7 @@ class Root:
             message = save_attendee(session, attendee, params)
 
             if not message:
-                message = '{} has been saved'.format(attendee.full_name)
+                message = '{} has been saved'.format(attendee.display_name)
                 if attendee.is_new and c.ADMIN_BADGES_NEED_APPROVAL and not session.current_admin_account().full_registration_admin:
                     attendee.badge_status = c.PENDING_STATUS
                     message += ' as a pending badge'
@@ -251,7 +251,7 @@ class Root:
                         attendee.checked_in = localized_now()
                         session.commit()
                         message = '{} saved and checked in as {}{}.'.format(
-                            attendee.full_name, attendee.badge, attendee.accoutrements)
+                            attendee.display_name, attendee.badge, attendee.accoutrements)
                         stay_on_form = False
 
                 if stay_on_form:
@@ -303,7 +303,7 @@ class Root:
         if model_id:
             try:
                 attendee = session.attendee(model_id)
-                description = f"At-door badge payment for {attendee.full_name}"
+                description = f"At-door badge payment for {attendee.display_name}"
             except NoResultFound:
                 group = session.group(model_id)
                 description = f"At-door payment for {group.name}"
@@ -660,7 +660,7 @@ class Root:
         else:
             session.add_to_print_queue(attendee, printer_id, cherrypy.session.get('reg_station'))
             session.commit()
-            return {'success': True, 'message': message + f" {attendee.full_name} successfully checked in."}
+            return {'success': True, 'message': message + f" {attendee.display_name} successfully checked in."}
 
     @ajax
     def print_and_check_in_badges(self, session, message='', printer_id='', minor_printer_id='', **params):
@@ -687,14 +687,14 @@ class Root:
             print_id, message = pre_print_check(session, attendee, printer_id, dry_run=True, **params)
 
             if not print_id:
-                printer_messages.append(f"There was a problem with printing {attendee.full_name}'s badge: {message}")
+                printer_messages.append(f"There was a problem with printing {attendee.display_name}'s badge: {message}")
 
             session.commit()
 
             if print_id and attendee.age_now_or_at_con < 18 and (not minor_printer_id or printer_id == minor_printer_id):
                 minor_check_badges = True
             elif print_id:
-                attendee_names_list.append(attendee.full_name)
+                attendee_names_list.append(attendee.display_name)
                 session.add_to_print_queue(attendee, printer_id,
                                            cherrypy.session.get('reg_station'))
 
@@ -760,7 +760,7 @@ class Root:
             if errors and not pickup_group_id:
                 return {'success': False, 'message': "<br>".join(errors)}
             elif errors:
-                printer_messages.append(f"There was a problem with printing {attendee.full_name}'s "
+                printer_messages.append(f"There was a problem with printing {attendee.display_name}'s "
                                         f"badge: {' '.join(errors)}")
             else:
                 attendee.checked_in = localized_now()
@@ -771,7 +771,7 @@ class Root:
                     'checked_in': attendee.checked_in and hour_day_format(attendee.checked_in),
                 }
                 session.commit()
-                attendee_names_list.append(attendee.full_name)
+                attendee_names_list.append(attendee.display_name)
 
         message = "{} successfully checked in.{}".format(readable_join(attendee_names_list),
                                                          (" " + " ".join(printer_messages))
@@ -795,7 +795,7 @@ class Root:
             groups = [(
                 group.id,
                 (group.name if len(group.name) < 30 else '{}...'.format(group.name[:27]))
-                + (' ({})'.format(group.leader.full_name) if group.leader else ''))
+                + (' ({})'.format(group.leader.display_name) if group.leader else ''))
                 for group in valid_groups]
         else:
             groups = []
@@ -820,7 +820,7 @@ class Root:
 
         return {
             'pickup_group': pickup_group,
-            'checked_in_names': [attendee.full_name for attendee in pickup_group.checked_in_attendees],
+            'checked_in_names': [attendee.display_name for attendee in pickup_group.checked_in_attendees],
             'total_cost': total_cost,
             'workstation_assignment': workstation_assignment,
         }
@@ -871,7 +871,7 @@ class Root:
                     session.rollback()
                     message = ' '.join([item for sublist in validations['error'].values() for item in sublist])
                     return {'success': False,
-                            'message': f"Could not save attendee {attendee.full_name}: {message}"}
+                            'message': f"Could not save attendee {attendee.display_name}: {message}"}
                 else:
                     save_attendee(session, attendee, attendee_params)
                     session.commit()
@@ -900,7 +900,7 @@ class Root:
         success = True
         session.commit()
         increment = True
-        message = '{} checked in as {}{}'.format(attendee.full_name, attendee.badge, attendee.accoutrements)
+        message = '{} checked in as {}{}'.format(attendee.display_name, attendee.badge, attendee.accoutrements)
 
         return {
             'success':    success,
@@ -1063,7 +1063,7 @@ class Root:
     def take_payment(self, session, id):
         attendee = session.attendee(id)
         receipt = session.get_receipt_by_model(attendee, create_if_none="DEFAULT")
-        charge_desc = "{}: {}".format(attendee.full_name, receipt.charge_description_list)
+        charge_desc = "{}: {}".format(attendee.display_name, receipt.charge_description_list)
         charge = TransactionRequest(receipt, attendee.email, charge_desc)
         message = charge.prepare_payment()
 
@@ -1201,7 +1201,7 @@ class Root:
     def manual_reg_charge(self, session, id):
         attendee = session.attendee(id)
         receipt = session.get_receipt_by_model(attendee, create_if_none="DEFAULT")
-        charge_desc = "{}: {}".format(attendee.full_name, receipt.charge_description_list)
+        charge_desc = "{}: {}".format(attendee.display_name, receipt.charge_description_list)
         charge = TransactionRequest(receipt, attendee.email, charge_desc)
 
         message = charge.prepare_payment(payment_method=c.MANUAL)
@@ -1233,7 +1233,7 @@ class Root:
 
         attendee.checked_in = localized_now()
         attendee.reg_station = cherrypy.session.get('reg_station')
-        message = '{a.full_name} checked in as {a.badge}{a.accoutrements}'.format(a=attendee)
+        message = '{a.display_name} checked in as {a.badge}{a.accoutrements}'.format(a=attendee)
         checked_in = attendee.id
         session.commit()
 
@@ -1376,7 +1376,7 @@ class Root:
     def review(self, session):
         return {'attendees': session.query(Attendee)
                                     .filter(Attendee.for_review != '')
-                                    .order_by(Attendee.full_name).all()}
+                                    .order_by(attendee.display_name).all()}
 
     @site_mappable
     def discount(self, session, message='', **params):
@@ -1407,7 +1407,7 @@ class Root:
         return {
             'attendees': session.query(Attendee)
                                 .filter(~Attendee.badge_status.in_([c.NEW_STATUS, c.COMPLETED_STATUS]))
-                                .order_by(Attendee.badge_status, Attendee.full_name).all()
+                                .order_by(Attendee.badge_status, attendee.display_name).all()
         }
 
     @public
@@ -1520,7 +1520,7 @@ class Root:
 
         if not message:
             success = True
-            message = '{} has been saved'.format(attendee.full_name)
+            message = '{} has been saved'.format(attendee.display_name)
 
             if attendee.is_new and c.ADMIN_BADGES_NEED_APPROVAL and not session.current_admin_account().full_registration_admin:
                 attendee.badge_status = c.PENDING_STATUS

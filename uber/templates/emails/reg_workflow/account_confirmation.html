@@ -4,7 +4,7 @@
 
     An account has been created using the email address {{ account.email }}{% if account.valid_attendees %} with the following registrations:
     <ul>{% for attendee in account.valid_attendees %}
-        <li>{{ attendee.full_name }} ({{ attendee.badge_type_label }}): {{ attendee.email|email_to_link }}</li>
+        <li>{{ attendee.display_name }} ({{ attendee.badge_type_label }}): {{ attendee.email|email_to_link }}</li>
         {% endfor %}
     </ul>
     {% else %}.{% endif %}

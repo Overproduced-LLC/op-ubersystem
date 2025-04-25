@@ -185,7 +185,7 @@ def time_conflicts(job):
         for shift in job.shifts:
             if job.minutes.intersection(shift.attendee.shift_minutes - original_minutes):
                 return 'You cannot change this job to this time, because {} is already working a shift then'.format(
-                    shift.attendee.full_name)
+                    shift.attendee.display_name)
 
 
 @validation.Job
@@ -431,8 +431,8 @@ def allowed_to_volunteer(attendee):
 
 @validation.Attendee
 def banned_volunteer(attendee):
-    if attendee.staffing_or_will_be and attendee.full_name in c.BANNED_STAFFERS:
-        return ('staffing', "We've declined to invite {} back as a volunteer, ".format(attendee.full_name) + (
+    if attendee.staffing_or_will_be and attendee.display_name in c.BANNED_STAFFERS:
+        return ('staffing', "We've declined to invite {} back as a volunteer, ".format(attendee.display_name) + (
                     'talk to STOPS to override if necessary' if c.AT_THE_CON else
                     'Please contact us via {} if you believe this is in error'.format(c.CONTACT_URL)))
 

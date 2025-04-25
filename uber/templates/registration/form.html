@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% set admin_area=True %}
 {% import "forms/macros.html" as form_macros with context %}
-{% block title %}Attendee Form - {{ attendee.full_name }}{% endblock %}
+{% block title %}Attendee Form - {{ attendee.display_name }}{% endblock %}
 {% block content %}
 
 {% include "registration/menu.html" %}
@@ -67,7 +67,7 @@
 </div>
 {% elif (c.AT_THE_CON or c.BADGE_PICKUP_ENABLED) and receipt and receipt.current_amount_owed and not attendee.is_new %}
     <div class="alert alert-warning center" role="alert">
-    <h4>{{ attendee.full_name }} currently owes <strong>{{ (receipt.current_amount_owed / 100)|format_currency }}</strong>.</h4>
+    <h4>{{ attendee.display_name }} currently owes <strong>{{ (receipt.current_amount_owed / 100)|format_currency }}</strong>.</h4>
     {% if payment_enabled %}
         {% if c.SPIN_TERMINAL_AUTH_KEY %}
             <form method="post" class="d-inline" action="mark_as_paid">
@@ -139,7 +139,7 @@
 {% endif %}
 {% if receipt and receipt.current_amount_owed < 0 %}
 <div class="alert alert-warning center" role="alert">
-    We currently owe {{ attendee.full_name }} {{ (receipt.current_amount_owed / 100)|format_currency(true) }}.
+    We currently owe {{ attendee.display_name }} {{ (receipt.current_amount_owed / 100)|format_currency(true) }}.
     {% if c.HAS_REG_ADMIN_ACCESS %}Please view and correct their receipt <a href="../reg_admin/receipt_items">on their receipt page</a>.
     {% else %}Please ask an admin with receipt access to correct their receipt.{% endif %}
 </div>

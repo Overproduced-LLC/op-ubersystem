@@ -190,7 +190,7 @@ class Department(MagModel):
                     'Department.id == DeptMembership.department_id, '
                     'DeptMembership.is_dept_head == True)',
         secondary='dept_membership',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         viewonly=True)
     checklist_admins = relationship(
         'Attendee',
@@ -199,7 +199,7 @@ class Department(MagModel):
                     'Department.id == DeptMembership.department_id, '
                     'DeptMembership.is_checklist_admin == True)',
         secondary='dept_membership',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         viewonly=True)
     members_with_inherent_role = relationship(
         'Attendee',
@@ -208,7 +208,7 @@ class Department(MagModel):
                     'Department.id == DeptMembership.department_id, '
                     'DeptMembership.has_inherent_role)',
         secondary='dept_membership',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         viewonly=True)
     members_who_can_admin_checklist = relationship(
         'Attendee',
@@ -219,7 +219,7 @@ class Department(MagModel):
                     'DeptMembership.is_checklist_admin == True, '
                     'DeptMembership.is_dept_head == True))',
         secondary='dept_membership',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         viewonly=True)
     pocs = relationship(
         'Attendee',
@@ -228,13 +228,13 @@ class Department(MagModel):
                     'Department.id == DeptMembership.department_id, '
                     'DeptMembership.is_poc == True)',
         secondary='dept_membership',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         viewonly=True)
     members = relationship(
         'Attendee',
         backref=backref('assigned_depts', order_by='Department.name'),
         cascade='save-update,merge,refresh-expire,expunge',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         secondary='dept_membership')
     memberships = relationship('DeptMembership', backref='department')
     membership_requests = relationship('DeptMembershipRequest', backref='department')
@@ -243,7 +243,7 @@ class Department(MagModel):
         backref=backref('explicitly_requested_depts', order_by='Department.name'),
         cascade='save-update,merge,refresh-expire,expunge',
         secondary='dept_membership_request',
-        order_by='Attendee.full_name')
+        order_by='Attendee.display_name')
     requesting_attendees = relationship(
         'Attendee',
         backref=backref('requested_depts', order_by='Department.name'),
@@ -251,7 +251,7 @@ class Department(MagModel):
                     'DeptMembershipRequest.department_id == Department.id, '
                     'DeptMembershipRequest.department_id == None)',
         secondary='dept_membership_request',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         viewonly=True)
     unassigned_requesting_attendees = relationship(
         'Attendee',
@@ -262,7 +262,7 @@ class Department(MagModel):
                     'DeptMembership.department_id == Department.id, '
                     'DeptMembership.attendee_id == DeptMembershipRequest.attendee_id))))',
         secondary='dept_membership_request',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         viewonly=True)
     unassigned_explicitly_requesting_attendees = relationship(
         'Attendee',
@@ -272,7 +272,7 @@ class Department(MagModel):
                     'DeptMembership.department_id == Department.id, '
                     'DeptMembership.attendee_id == DeptMembershipRequest.attendee_id))))',
         secondary='dept_membership_request',
-        order_by='Attendee.full_name',
+        order_by='Attendee.display_name',
         viewonly=True)
     parent = relationship(
         'Department',
@@ -529,7 +529,7 @@ class Job(MagModel):
     def total_hours(self):
         return self.weighted_hours * self.slots
 
-    def _potential_volunteers(self, staffing_only=False, order_by=Attendee.full_name):
+    def _potential_volunteers(self, staffing_only=False, order_by=Attendee.display_name):
         """
         Return a list of attendees who:
 
@@ -561,7 +561,7 @@ class Job(MagModel):
         """
         Format output for use with the {{ options() }} template decorator .
         """
-        return [(a.id, a.full_name) for a in self.capable_volunteers]
+        return [(a.id, a.display_name) for a in self.capable_volunteers]
 
     @property
     def capable_volunteers(self):
@@ -598,4 +598,4 @@ class Shift(MagModel):
 
     @property
     def name(self):
-        return "{}'s {!r} shift".format(self.attendee.full_name, self.job.name)
+        return "{}'s {!r} shift".format(self.Attendee.display_name, self.job.name)

@@ -96,7 +96,7 @@ class Root:
         cherrypy.session['kiosk_operator_id'] = attendee.id
         return {'success': True,
                 'message': f"Logged in as {attendee.name_and_badge_info}!",
-                'operator_name': attendee.full_name,
+                'operator_name': attendee.display_name,
                 }
 
     @public

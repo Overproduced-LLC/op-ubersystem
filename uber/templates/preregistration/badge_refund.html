@@ -7,7 +7,7 @@
   {{ "Refund and " if attendee.amount_paid else "" }}Cancel My Registration{% endif %}</button>
 {% if abandon_hover_text %}</span>{% endif %}
 
-{% set cancel_modal_title %}Cancel {% if mini_card %}{{ attendee.full_name }}'s {% endif %} Registration?{% endset %}
+{% set cancel_modal_title %}Cancel {% if mini_card %}{{ attendee.display_name }}'s {% endif %} Registration?{% endset %}
 {% set cancel_modal_text %}{{ "Refunding" if attendee.amount_paid else "Abandoning" }} your badge will <strong>immediately</strong> cancel your registration.{% if attendee.amount_paid %}<br/><br/>The registration fee and any upgrades purchased will be refunded to the original payment method.{% endif %}<br/><br/>You will need to purchase a new badge if you wish to attend {{ c.EVENT_NAME }}.<br/><br/>Do you wish to proceed?{% endset %}
 
 {% if mini_card %}

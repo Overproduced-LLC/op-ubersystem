@@ -53,14 +53,14 @@ class AdminAccount(MagModel):
     api_jobs = relationship('ApiJob', backref='admin_account', cascade='save-update,merge,refresh-expire,expunge')
 
     def __repr__(self):
-        return f"<Admin full_name='{self.attendee.full_name}'>"
+        return f"<Admin display_name='{self.attendee.display_name}'>"
 
     @staticmethod
     def admin_name():
         try:
             from uber.models import Session
             with Session() as session:
-                return session.admin_attendee().full_name
+                return session.admin_attendee().display_name
         except Exception:
             return None
         
@@ -72,11 +72,11 @@ class AdminAccount(MagModel):
                 admin = session.admin_attendee()
                 volunteer = session.kiosk_operator_attendee()
                 if volunteer and not admin:
-                    return volunteer.full_name + " (Volunteer)"
+                    return volunteer.display_name + " (Volunteer)"
                 elif not admin:
-                    return session.current_supervisor_admin().attendee.full_name
+                    return session.current_supervisor_admin().attendee.display_name
                 else:
-                    return admin.full_name
+                    return admin.display_name
         except Exception:
             return None
         
@@ -85,7 +85,7 @@ class AdminAccount(MagModel):
         try:
             from uber.models import Session
             with Session() as session:
-                return session.current_supervisor_admin().attendee.full_name
+                return session.current_supervisor_admin().attendee.display_name
         except Exception:
             return None
 
@@ -326,6 +326,10 @@ class WatchList(MagModel):
         return '{} {}'.format(self.first_names, self.last_name).strip() or 'Unknown'
 
     @property
+    def display_name(self):
+        return self.display_name or self.full_name
+    
+    @property
     def first_name_list(self):
         return [name.strip().lower() for name in self.first_names.split(',')]
 
@@ -349,7 +353,7 @@ attendee_escalation_ticket = Table(
 
 class EscalationTicket(MagModel):
     attendees = relationship(
-        'Attendee', backref='escalation_tickets', order_by='Attendee.full_name',
+        'Attendee', backref='escalation_tickets', order_by='Attendee.display_name',
         cascade='save-update,merge,refresh-expire,expunge',
         secondary='attendee_escalation_ticket')
     ticket_id_seq = Sequence('escalation_ticket_ticket_id_seq')

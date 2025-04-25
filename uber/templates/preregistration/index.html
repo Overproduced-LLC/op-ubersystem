@@ -53,7 +53,7 @@
     <tbody>
       {% for attendee in cart.attendees %}
         <tr>
-          <td>{{ attendee.full_name }}{% if attendee.badges %} ({{ attendee.name }}){% endif %}</td>
+          <td>{{ attendee.display_name }}{% if attendee.badges %} ({{ attendee.name }}){% endif %}</td>
           <td>
             <ul style="padding-left:15px">
               {% if attendee.badge_type in c.BADGE_TYPE_PRICES %}

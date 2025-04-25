@@ -33,7 +33,7 @@
 {% if not admin_area %}
 <div class="alert alert-danger" role="alert">
   Lodging information, aside from roommates, cannot be changed through this portal after registration is paid.<br>
-  {% if not is_prereg %}Please contact the registration team if you need to make changes.{% else %}You may contact the registration team later for changes.{% endif %}
+  {% if not is_prereg %}Please contact the registration team if you need to make changes.{% else %}<b>If you require financial assistance or are otherwise unable to pay today, please select 'no lodging needed' and continue with registration.</b> You may contact the registration team later for changes and to be charged at a later date.{% endif %}
   The deadline for changes on lodging is <b>{{ c.ROOM_DEADLINE|datetime_local }}</b>
 </div>
 {% endif %}

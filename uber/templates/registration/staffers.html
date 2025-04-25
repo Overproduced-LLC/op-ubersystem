@@ -24,7 +24,7 @@
 </tr></thead>
 {% for attendee in staffers %}
     <tr>
-        <td data-order="{{ attendee.full_name }}" data-search="{{ attendee.full_name }}" style="text-align:left"> <a href="form?id={{ attendee.id }}">{{ attendee.full_name }}</a> </td>
+        <td data-order="{{ attendee.display_name }}" data-search="{{ attendee.display_name }}" style="text-align:left"> <a href="form?id={{ attendee.id }}">{{ attendee.display_name }}</a> </td>
         <td>{{ attendee.badge }}</td>
         <td>{{ attendee.paid_label }}</td>
         <td style="text-align:left">

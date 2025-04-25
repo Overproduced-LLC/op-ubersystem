@@ -44,7 +44,7 @@
       {% if code.valid_used_by %}
       {% set attendee = code.valid_used_by[0] %}
         <td>
-          {{ attendee.full_name }} ({{ attendee.email|email_to_link }})
+          {{ attendee.display_name }} ({{ attendee.email|email_to_link }})
         </td>
       {% else %}
         <td>
