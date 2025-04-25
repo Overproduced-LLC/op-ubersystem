@@ -18,7 +18,7 @@ elif [ "$1" = 'celery-beat' ]; then
     ./env/bin/celery -A uber.tasks beat --loglevel=DEBUG --pidfile=
 elif [ "$1" = 'celery-worker' ]; then
     ./env/bin/celery -A uber.tasks worker --loglevel=DEBUG
-elif [ "$1" = 'seb' ]; then
+elif [ "$1" = 'sep' ]; then
     shift
     ./env/bin/python /app/sep.py "$@"
 else

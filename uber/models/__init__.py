@@ -1909,6 +1909,7 @@ class Session(SessionManager):
 
             attendee = Attendee(
                 placeholder=True,
+                display_name='TestDev',
                 first_name='Test',
                 last_name='Developer',
                 email=c.TEST_ADMIN_EMAIL,
