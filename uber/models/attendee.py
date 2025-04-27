@@ -918,6 +918,16 @@ class Attendee(MagModel, TakesPaymentMixin):
         cost *= 100 # Convert to cents
         return int(cost)
     
+    def calc_lodging_tax(self):
+        lodging_cost = self.calc_lodging_cost()
+        # run calc_lodging_cost first
+        if lodging_cost == 0:
+            return 0
+        # Calculate tax
+        tax = (float(c.LODGING_TAX_RATE)/100) * lodging_cost/100
+        tax *= 100 # Convert to cents
+        return int(tax)
+    
     @property
     def total_cost_if_valid(self):
         if self.active_receipt:

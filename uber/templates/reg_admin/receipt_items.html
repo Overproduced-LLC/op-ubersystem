@@ -996,10 +996,6 @@ See the <a href="receipt_items_guide" target="_blank">receipt items guide</a> fo
 {% if receipt %}
   {{ receipt_table(receipt, receipt.all_sorted_items_and_txns) }}
   <button class="btn btn-danger" onClick="fullRefund('{{ receipt.id }}')">Refund and Cancel This {{ model_str|title }}</button>
-  {% if not c.AUTHORIZENET_LOGIN_ID %}
-  OR
-  <button class="btn btn-danger" onClick="mostlyFullRefund('{{ receipt.id }}', '{{ (receipt.remaining_processing_fees / 100)|format_currency }}', '{{ (group_processing_fee / 100)|format_currency if group_leader_receipt_id else '' }}')">Refund and Cancel This {{ model_str|title }} Excluding Processing Fees</button>
-  {% endif %}
 {% else %}
   There are no active receipts for this {{ model_str }}.
   <br/><a href="create_receipt?id={{ model.id }}" class="btn btn-success">Create Default Receipt</a> <a href="create_receipt?id={{ model.id }}&blank=true" class="btn btn-info">Create Blank Receipt</a>

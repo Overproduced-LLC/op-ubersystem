@@ -324,7 +324,9 @@ class OtherInfo(MagForm):
         'and I understand my contact information will be shared with Accessibility Services for this purpose.',
         widget=SwitchInput())
     # Field to upload proof of vaccination
-    vaccination_date = DateField('Most Recent COVID Booster Date', render_kw={'placeholder': 'YYYY-MM-DD', 'required': True, 'max': datetime.today().strftime('%Y-%m-%d'), 'min': '2020-01-01'})
+    max_date = datetime.today() + timedelta(days=1)
+    formatted_max_date = max_date.strftime('%Y-%m-%d')
+    vaccination_date = DateField('Most Recent COVID Booster Date', render_kw={'placeholder': 'YYYY-MM-DD', 'required': True, 'max': formatted_max_date, 'min': '2020-01-01'})
     vaccination_proof_approved = BooleanField('Vaccinations reviewed and accepted?', widget=SwitchInput())
     
     def get_non_admin_locked_fields(self, attendee):
