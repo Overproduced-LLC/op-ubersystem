@@ -245,7 +245,6 @@
             <th> <a href="index?order={{ order.ribbon }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}">Badge Ribbons</a></th>
             {% if c.DONATION_TIER_OPTS|length > 1 %}<th> <a href="index?order={{ order.amount_extra }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}">Upgrade</a></th>{% endif %}
             <th> <a href="index?order={{ order.paid }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}">Paid</a> </th>
-            <th>{% if c.COLLECT_EXACT_BIRTHDATE %}<a href="index?order={{ order.birthdate }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}">{% endif%}Age{% if c.COLLECT_EXACT_BIRTHDATE %}</a>{% endif %}</th>
             {% if c.AT_THE_CON or c.BADGE_PICKUP_ENABLED or c.AFTER_EPOCH %}
                 <th> <a href="index?order={{ order.checked_in }}&page={{ page }}&search_text={{ search_text|urlencode }}&invalid={{ invalid }}"><nobr>Checked In</nobr></a> </th>
             {% endif %}
@@ -272,7 +271,6 @@
                 <td id="ribbon_{{ attendee.id }}">{{ attendee.ribbon_labels|join(", ") }}</td>
                 {% if c.DONATION_TIER_OPTS|length > 1 %}<td id="amount_extra_{{ attendee.id }}">{{ attendee.amount_extra_label }}</td>{% endif %}
                 <td id="paid_{{ attendee.id }}" ><nobr>{{ attendee.paid_label }}</nobr></td>
-                <td> <nobr>{{ attendee.age_group_conf.desc }}</nobr> </td>
                 {% if c.AT_THE_CON or c.BADGE_PICKUP_ENABLED %}
                     {% if attendee.checked_in %}
                             <td>
