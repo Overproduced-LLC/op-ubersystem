@@ -1,5 +1,6 @@
 import shutil
 import json
+from discord_webhook import DiscordWebhook
 from datetime import datetime, timedelta
 from functools import wraps
 from uber.models.admin import PasswordReset
@@ -727,6 +728,9 @@ class Root:
                 elif c.ATTENDEE_ACCOUNTS_ENABLED:
                     session.add_attendee_to_account(attendee, session.current_attendee_account())
                 else:
+                    webhook = DiscordWebhook(url=c.DISCORD_WEBHOOK_URL,
+                                            content=f"{attendee.display_name} has registered for {c.EVENT_NAME_AND_YEAR}!")
+                    webhook.execute()
                     session.add(attendee)
 
             for group in cart.groups:

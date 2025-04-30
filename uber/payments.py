@@ -1,5 +1,6 @@
 import checkdigit.verhoeff as verhoeff
 import pytz
+from discord_webhook import DiscordWebhook
 from typing import Iterable
 from collections import OrderedDict
 from datetime import datetime, timedelta
@@ -1601,6 +1602,8 @@ class ReceiptManager:
                     model.badge_status = c.NEW_STATUS
                 if model.paid in [c.NOT_PAID, c.PENDING]:
                     model.paid = c.HAS_PAID
+                    webhook = DiscordWebhook(url=c.DISCORD_WEBHOOK_URL, content=f"{model.display_name} has registered for {c.EVENT_NAME_AND_YEAR}!")
+                    webhook.execute()
                 if model.lodging_paid in [c.NOT_PAID, c.PENDING]:
                     model.lodging_paid = c.HAS_PAID
                     
