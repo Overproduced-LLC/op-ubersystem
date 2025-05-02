@@ -17,6 +17,9 @@
 
 {% block name %}
 {% set attendee_last_name = attendee.last_name[0] ~ '.' if limited_read else attendee.last_name %}
+<div class="alert alert-danger" role="danger">
+  <b>Hey, listen!</b> This form is only for people attending the event IN PERSON.<br>If you are participating remotely you may close this form.
+</div>
 <div class="row g-sm-3">
   <div class="col-12 col-sm-6">{{ form_macros.form_input(personal_info.display_name) }}</div>
 </div>
