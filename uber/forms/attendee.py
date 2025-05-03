@@ -323,8 +323,9 @@ class OtherInfo(MagForm):
         f'I would like to be contacted by the {c.EVENT_NAME} Accessibility Services department prior to the event '
         'and I understand my contact information will be shared with Accessibility Services for this purpose.',
         widget=SwitchInput())
-    # Field to upload proof of vaccination
-    max_date = datetime.today() + timedelta(days=1)
+    # Field to upload proof of vaccination.
+    # Max date is todays date + 2 day
+    max_date = datetime.now() + timedelta(days=2)
     formatted_max_date = max_date.strftime('%Y-%m-%d')
     vaccination_date = DateField('Most Recent COVID Booster Date', render_kw={'placeholder': 'YYYY-MM-DD', 'required': True, 'max': formatted_max_date, 'min': '2020-01-01'})
     vaccination_proof_approved = BooleanField('Vaccinations reviewed and accepted?', widget=SwitchInput())
