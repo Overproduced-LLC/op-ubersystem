@@ -73,7 +73,7 @@
             {% endif %}
           </p>
           <p>
-            You are assigned to the following department{{ assigned_depts_labels|length|pluralize }}: {{ assigned_depts_labels|join(' / ') }}.
+            You are tentatively assigned to the following department{{ assigned_depts_labels|length|pluralize }}: {{ assigned_depts_labels|join(' / ') }}. More departments may be added later.
           </p>
 
           {% if requested_setup_nights or requested_teardown_nights %}

@@ -1,11 +1,9 @@
-{{ attendee.first_name }},
+{{ attendee.display_name }},
 
-Thanks for signing up to volunteer at {{ c.EVENT_NAME }}!  You're currently assigned to the {{ attendee.assigned_depts_labels|readable_join }} department{{ attendee.assigned_depts_labels|length|pluralize }}, but let us know if you'd also like to work in any other departments.
+Thanks for signing up to volunteer at {{ c.EVENT_NAME }}!  You're tentatively assigned to the {{ attendee.assigned_depts_labels|readable_join }} department{{ attendee.assigned_depts_labels|length|pluralize }}.
 
-You can sign up for shifts at {{ c.URL_BASE }}/staffing/login?first_name={{ attendee.first_name|urlencode }}&last_name={{ attendee.last_name|urlencode }}&email={{ attendee.email|urlencode }}&zip_code={{ attendee.zip_code|urlencode }} -- if you need to, you can verify/update your personal information at {{ c.URL_BASE }}/preregistration/confirm?id={{ attendee.id }}. Some shifts have not been created yet - check back later for updates.
+You can complete your checklist and view your shifts at {{ c.URL_BASE }}/staffing/login?first_name={{ attendee.first_name|urlencode }}&last_name={{ attendee.last_name|urlencode }}&email={{ attendee.email|urlencode }}&zip_code={{ attendee.zip_code|urlencode }} -- if you need to, you can verify/update your personal information at {{ c.URL_BASE }}/preregistration/confirm?id={{ attendee.id }}. Some shifts have not been created yet - check back later for updates.
 
-You can add / drop / change your shifts anytime until {{ c.EPOCH|datetime_local }}.
-
-Please let us know if you have any questions.
+Please let us know if you have any questions in our Event Discord.
 
 {{ c.STOPS_EMAIL_SIGNATURE }}
