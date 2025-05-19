@@ -113,21 +113,12 @@ This is calculated by taking the Attendee badge type's stock and subtracting the
   </div>
 </div>
 
-<h4>Shirt Size Stocks</h4>
+<h4>Shirt Size Counts</h4>
 <ul>
-    {% for desc, count in counts.shirt_stocks.items() %}
+    {% for desc, count in counts.shirt_counts.items() %}
         <li><i>{{ desc }}:</i> {{ count }}</li>
     {% endfor %}
 </ul>
-
-<h4>Shirt Size Counts</h4>
-  The number of each shirt size that is claimed by an attendee -- these are counted against shirt size stocks, but DO NOT represent the number of shirts we need to manufacture. The algorithm matches that of our preordered merch counts to make sure we don't oversell.
-  <br/>
-  <ul>
-    {% for desc, count in counts.shirt_counts.items() %}
-      <li><i>{{ desc }}:</i> {{ count }}</li>
-    {% endfor %}
-  </ul>
 
 Of the "paid by group" badges,
 <br/> {{ counts.groups.paid }} were from groups that actually gave us money, and

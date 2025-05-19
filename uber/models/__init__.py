@@ -1531,7 +1531,7 @@ class Session(SessionManager):
             parameter for clients to indicate that all attendees should be
             returned.
             """
-            staffing_filter = [Attendee.staffing == True] if only_staffing else []  # noqa: E712
+            staffing_filter = [Attendee.staffing == True or Attendee.volunteering_badge_or_ribbon == True] if only_staffing else []  # noqa: E712
 
             badge_statuses = [c.NEW_STATUS, c.COMPLETED_STATUS]
             if pending:

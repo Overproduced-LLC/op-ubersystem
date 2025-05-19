@@ -177,11 +177,14 @@ class Root:
             counts['badge_stocks'][c.BADGES[badge_type]] = badge_stocks.get(var.lower(), 'no limit set')
             counts['badge_counts'][c.BADGES[badge_type]] = c.get_badge_count_by_type(badge_type)
 
-        shirt_stocks = c.SHIRT_SIZE_STOCKS
-        for shirt_enum_key in c.PREREG_SHIRTS.keys():
-            counts['shirt_stocks'][c.PREREG_SHIRTS[shirt_enum_key]] = shirt_stocks.get(shirt_enum_key, 'no limit set')
-            counts['shirt_counts'][c.PREREG_SHIRTS[shirt_enum_key]] = \
-                c.REDIS_STORE.hget(c.REDIS_PREFIX + 'shirt_counts', shirt_enum_key)
+        for shirt_enum_key, name in c.SHIRT_OPTS:
+            print('shirt_enum_key:', shirt_enum_key, type(shirt_enum_key))
+            # Count number of attendees with shirt size
+            counts['shirt_counts'][name] = session.query(Attendee).filter(
+                Attendee.shirt == shirt_enum_key,
+                Attendee.badge_status.notin_([c.INVALID_GROUP_STATUS, c.INVALID_STATUS, c.IMPORTED_STATUS,
+                                              c.REFUNDED_STATUS])
+            ).count()
 
         for a in session.query(Attendee).options(joinedload(Attendee.group)):
             counts['statuses'][a.badge_status_label] += 1

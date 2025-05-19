@@ -505,7 +505,8 @@ class AdminBadgeFlags(BadgeFlags):
         validators.NumberRange(min=0, message="Base badge price must be a number that is 0 or higher.")
         ], widget=NumberInputGroup())
     no_override = BooleanField('Let the system determine base badge price. (uncheck to override badge price)')
-
+    shirt = SelectField('Shirt Size', coerce=int,
+                        choices=c.SHIRT_OPTS, validators=[validators.Optional()])
     @new_or_changed_validation.badge_num
     def dupe_badge_num(form, field):
         existing_name = ''
