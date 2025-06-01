@@ -43,7 +43,7 @@
 <div class="d-none csrf_token"> {{ csrf_token() }} </div>
 <div class="row justify-content-center">
 <div class="col-12 col-md-10 text-center">
-  <h2>{{ c.CURRENT_VOLUNTEER.first_name }} {{ c.CURRENT_VOLUNTEER.last_name }}'s Available Shifts</h2>
+  <h2>{{ c.CURRENT_VOLUNTEER.display_name }}'s Available Shifts</h2>
   {% if c.BEFORE_SHIFTS_CREATED %}
   <p>Shifts will be available starting {{ c.SHIFTS_CREATED.astimezone(c.EVENT_TIMEZONE).strftime('%B %-e') }}.</p>
   {% else %}
