@@ -571,7 +571,7 @@ class Root:
             #     message = "Please enter a vaccination date. "
             
             if not message:
-                attendee.vaccination_date = datetime.strptime(params.get('vaccination_date'), '%Y-%m-%d')
+                # attendee.vaccination_date = datetime.strptime(params.get('vaccination_date'), '%Y-%m-%d')
                 PreregCart.unpaid_preregs[attendee.id] = PreregCart.to_sessionized(attendee,
                                                                                 name=attendee.name,
                                                                                 badges=attendee.badges)
