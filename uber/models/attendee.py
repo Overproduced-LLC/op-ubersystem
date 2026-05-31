@@ -222,6 +222,7 @@ class Attendee(MagModel, TakesPaymentMixin):
     departure_date = Column(Date, nullable=True, default=None)
     roommate = Column(UnicodeText, nullable=True, default=None)
     roommate_requests = Column(UnicodeText, nullable=True, default=None)
+    roommate_party_size = Column(Integer, nullable=True, default=None)
     room_type = Column(Choice(c.ROOM_TYPE_OPTS), default=c.ROOM_TYPE_OPTS[0][0])
     single_occupancy = Column(Boolean, default=False)
     linens = Column(Boolean, default=False)

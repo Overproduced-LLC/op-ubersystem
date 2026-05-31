@@ -32,9 +32,8 @@
 {% endif %}
 {% if not admin_area %}
 <div class="alert alert-danger" role="alert">
-  Lodging information, aside from roommates, cannot be changed through this portal after registration is paid.<br>
-  {% if not is_prereg %}Please contact the registration team if you need to make changes.{% else %}<b>If you require financial assistance or are otherwise unable to pay today, please select 'no lodging needed' and continue with registration.</b> You may contact the registration team later for changes and to be charged at a later date.{% endif %}
-  The deadline for changes on lodging is <b>{{ c.ROOM_DEADLINE|datetime_local }}</b>
+  Lodging information is for our understanding of your availablity on site during the event. This is not a booking confirmation, and your in and out dates can be approximate.<br>
+  <b>Booking for lodging is not available through the registration system. Please visit the room block booking link through Hilton's website, available on the event discord.</b><br>
 </div>
 {% endif %}
 <div class="alert alert-info" role="alert">
@@ -54,14 +53,14 @@
 </div>
 {% endblock %}
 
-{% block rates %}
+<!-- {% block rates %}
 <div class="row g-sm-3">
 </div>
 <div class="row g-sm-3">
   <div class="col-12 pt-3">{{ form_macros.toggle_checkbox(lodging_info.linens, help_text="($5/night charge applies)") }}</div>
   <div class="col-12 mt-0">{{ form_macros.toggle_checkbox(lodging_info.single_occupancy, help_text="(Single-occupancy rate applies)") }}</div>
 </div>
-{% endblock %}
+{% endblock %} -->
 
 {% block roommates %}
 <div class="row g-sm-3">
@@ -69,41 +68,11 @@
     {{ form_macros.form_input(lodging_info.roommate) }}
   </div>
   <div class="col-12 col-sm-6">
-    {{ form_macros.form_input(lodging_info.roommate_requests, help_text="Don't have a roommate? Describe your ideal roommate and we may be able to match you.") }}
+    {{ form_macros.form_input(lodging_info.roommate_requests, help_text="Don't have a roommate? Describe your ideal roommate(s) and we may be able to match you.") }}
+  </div>
+  <div class="col-12 col-sm-6">
+    {{ form_macros.form_input(lodging_info.roommate_party_size, help_text="If making roommate requests, please specify the maximum number of roommates.") }}
   </div>
 </div>
-<script type="text/javascript">
-  let no_lodging_needed = '{{ c.NO_LODGING_NEEDED }}';
-  $(document).ready(function() {
-    $('#room_type').change(function() {
-      if ($(this).val() == no_lodging_needed) {
-        $('#linens').prop('checked', false);
-        $('#linens').prop('disabled', true);
-        $('#single_occupancy').prop('checked', false);
-        $('#single_occupancy').prop('disabled', true);
-        $('#roommate').val('');
-        $('#roommate').prop('disabled', true);
-        $('#roommate_requests').val('');
-        $('#roommate_requests').prop('disabled', true);
-      } else {
-        $('#linens').prop('disabled', false);
-        $('#single_occupancy').prop('disabled', false);
-        $('#roommate').prop('disabled', false);
-        $('#roommate_requests').prop('disabled', false);
-      }
-    })
-    $('#single_occupancy').change(function() {
-      if ($(this).is(':checked')) {
-        $('#roommate').val('');
-        $('#roommate').prop('disabled', true);
-        $('#roommate_requests').val('');
-        $('#roommate_requests').prop('disabled', true);
-      } else {
-        $('#roommate').prop('disabled', false);
-        $('#roommate_requests').prop('disabled', false);
-      }
-    });
-  });
-</script>
 <hr>
 {% endblock %}

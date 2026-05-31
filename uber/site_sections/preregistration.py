@@ -61,6 +61,7 @@ def _add_lodging_info(session, attendee, params):
     attendee.room_type = int(params.get('room_type'))
     attendee.roommate = params.get('roommate')
     attendee.roommate_requests = params.get('roommate_requests')
+    attendee.roommate_party_size = int(params.get('roommate_party_size')) if params.get('roommate_party_size') else None
     if params.get('single_occupancy') == '1':
         attendee.single_occupancy = True
     else:

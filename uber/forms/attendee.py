@@ -214,7 +214,11 @@ class LodgingInfo(MagForm):
     single_occupancy = BooleanField('I would like to room alone.', widget=SwitchInput())
     roommate = StringField('Roommate', render_kw={'placeholder': 'Name of the person you want to room with, or leave blank to be matched with someone.'})
     roommate_requests = StringField('Roommate Requests', render_kw={'placeholder': 'Any special requests for your roommate? (e.g. allergies, snoring, etc.)'})
-    
+    roommate_party_size = IntegerField('Number of Roommates', validators=[
+        validators.Optional(),
+        validators.NumberRange(min=2, message="Roommate party size must be at least 2. If you want to room alone, you don't need roommate requests!"),
+        validators.NumberRange(max=4, message="Please keep your roommate party size to 4 or fewer.")
+    ])
 
     def get_non_admin_locked_fields(self, attendee):
         locked_fields = []
