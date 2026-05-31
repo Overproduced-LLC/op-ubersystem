@@ -567,8 +567,8 @@ class Root:
         if cherrypy.request.method == "POST":
             _add_promo_code(session, attendee, params.get('promo_code_code'))
             
-            if (not params.get('vaccination_date')):
-                message = "Please enter a vaccination date. "
+            # if (not params.get('vaccination_date')):
+            #     message = "Please enter a vaccination date. "
             
             if not message:
                 attendee.vaccination_date = datetime.strptime(params.get('vaccination_date'), '%Y-%m-%d')

@@ -331,7 +331,7 @@ class OtherInfo(MagForm):
     # Max date is todays date + 2 day
     max_date = datetime.now() + timedelta(days=2)
     formatted_max_date = max_date.strftime('%Y-%m-%d')
-    vaccination_date = DateField('Most Recent COVID Booster Date', render_kw={'placeholder': 'YYYY-MM-DD', 'required': True, 'max': formatted_max_date, 'min': '2020-01-01'})
+    vaccination_date = DateField('Most Recent COVID Booster Date', render_kw={'placeholder': 'YYYY-MM-DD', 'required': False, 'max': formatted_max_date, 'min': '2020-01-01'})
     vaccination_proof_approved = BooleanField('Vaccinations reviewed and accepted?', widget=SwitchInput())
     
     def get_non_admin_locked_fields(self, attendee):
