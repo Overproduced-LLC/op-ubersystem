@@ -12,27 +12,10 @@
 
 {% block dates %}
 <hr>
-<h3>Lodging</h3>
-{{ macros.popup_link("../static_views/roomTypes.html",'About Room Types') }}
-<!-- Disabled outside of admin_area and is_prereg -->
-<div class="row g-sm-3 mb-3">
-  <div>
-    {{ lodging_info.room_type(id="room_type",disabled=not admin_area and not is_prereg) }}
-  </div>
-</div>
-{% if is_prereg %}
-{{ form_macros.lodging_card_select(lodging_info.room_type,
-  attendee.available_room_types, disabled_opts=[],
-  target_field_id="room_type", help_text="First price is single-occupancy rate, second price is double-occupancy rate. Nightly and per-person") }}
-  <script type="text/javascript">
-    $(document).ready(function() {
-      $('#room_type').hide();
-    });
-  </script>
-{% endif %}
+<h3>Arrival & Departure Info</h3>
 {% if not admin_area %}
 <div class="alert alert-danger" role="alert">
-  Lodging information is for our understanding of your availablity on site during the event. This is not a booking confirmation, and your in and out dates can be approximate.<br>
+  This information is for our understanding of your availablity on site during the event. This is not a booking confirmation, and your in and out dates can be approximate.<br>
   <b>Booking for lodging is not available through the registration system. Please visit the room block booking link through Hilton's website, available on the event discord.</b><br>
 </div>
 {% endif %}

@@ -75,7 +75,7 @@ Use these to add or rearrange fields. Remember to use {{ super() }} to print the
 {% endif %}
 {% endblock %}
 
-{% block vaccination_date %}
+<!-- {% block vaccination_date %}
 <label class="col-sm-3 control-label">Vaccination Proof</label>
 <div class="col-sm-6">
   {{ form_macros.form_input(other_info.vaccination_date, type="date", help_text="Must have occurred before registering", required=(not admin_area)) }}
@@ -88,4 +88,4 @@ All attendees are expected to comply to the <a href="{{ c.VIRUS_SAFETY_URL }}" t
     <div class="col-12">{{ form_macros.toggle_checkbox(other_info.vaccination_proof_approved, [], toggle_required=True) }}</div>
 </div>
 {% endif %}
-{% endblock %}
+{% endblock %} -->

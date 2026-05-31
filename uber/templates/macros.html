@@ -429,9 +429,8 @@
   {%-
           set steps = [
               (('form', 'post_form'), 'Personal Info'),
-              (('lodging_info'), 'Lodging Info'),
-              (('additional_info'), 'Additional Info'),
-              (('index', 'preregistration', ''), 'Review & Pay'),
+              (('lodging_info'), 'Arrival & Departure Info'),
+              (('index', 'preregistration', ''), 'Review'),
               (('paid_preregistrations',), 'Done')]
           -%}
   {%- set step_count = steps|length -%}
