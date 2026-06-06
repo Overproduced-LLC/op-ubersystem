@@ -2,12 +2,13 @@
 
 {% if attendee.takes_shifts %}
     <li>
+        (If applicable) 
         {{ macros.checklist_image(attendee.shifts) }}
         {% if attendee.shift_prereqs_complete %}
-            <a href="shifts">Sign up</a>
+            <a href="shifts"> View</a>
         {% else %}
-            Sign up
+            View
         {% endif %}
-        for shifts{% if c.BEFORE_SHIFTS_CREATED %} starting on {{ c.SHIFTS_CREATED.astimezone(c.EVENT_TIMEZONE).strftime('%B %-e') }}{% endif %}.
+         shifts{% if c.BEFORE_SHIFTS_CREATED %} starting on {{ c.SHIFTS_CREATED.astimezone(c.EVENT_TIMEZONE).strftime('%B %-e') }}{% endif %}.
     </li>
 {% endif %}
