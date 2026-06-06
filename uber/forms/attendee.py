@@ -231,7 +231,7 @@ class LodgingInfo(MagForm):
             return list(self._fields.keys())
 
         
-        return locked_fields + ['arrival_date', 'departure_date', 'room_type', 'linens', 'single_occupancy']
+        return locked_fields + ['room_type', 'linens', 'single_occupancy'] # 'arrival_date', 'departure_date', 
     
          
     
