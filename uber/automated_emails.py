@@ -391,10 +391,11 @@ StopsEmailFixture(
     ident='volunteer_shift_signup_reminder_last_chance')
 
 StopsEmailFixture(
-    'Still want to volunteer at {EVENT_NAME} ({EVENT_DATE})?',
+    'Your volunteer checklist for {EVENT_NAME} ({EVENT_DATE})?',
     'shifts/volunteer_check.txt',
     lambda a: (
         c.VOLUNTEER_CHECKLIST_OPEN
+        and not a.agreed_to_volunteer_agreement
         and a.badge_type != c.CONTRACTOR_BADGE
         and c.VOLUNTEER_RIBBON in a.ribbon_ints
         and a.takes_shifts
