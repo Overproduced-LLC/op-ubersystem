@@ -36,6 +36,7 @@ config*.ini
 uber.ini
 .env
 .venv/
+.worktrees/
 ssl-cert.pem
 ssl-key.pem
 celerybeat-schedule
