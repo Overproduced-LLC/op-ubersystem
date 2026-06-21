@@ -525,6 +525,10 @@ class Attendee(MagModel, TakesPaymentMixin):
 
     @presave_adjustment
     def _staffing_adjustments(self):
+        if self.is_new or self.is_unassigned or (
+                not self.orig_value_of('first_name') and self.first_name):
+            self.staffing = True
+
         if self.is_dept_head:
             self.staffing = True
             if self.paid == c.NOT_PAID:

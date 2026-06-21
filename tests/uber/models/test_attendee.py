@@ -550,6 +550,45 @@ class TestUnsetVolunteer:
         assert a.full_name == 'Nac Mac Feegle'
 
 
+class TestVolunteerDefaults:
+    def test_saved_attendee_registration_gets_volunteer_ribbon(self):
+        with Session() as session:
+            attendee = Attendee(first_name='Ribbon', last_name='Volunteer')
+            session.add(attendee)
+            session.flush()
+
+            assert attendee.staffing
+            assert c.VOLUNTEER_RIBBON in attendee.ribbon_ints
+
+    def test_group_badges_are_volunteers_when_created(self):
+        with Session() as session:
+            group = Group(name='Volunteer Group')
+            session.add(group)
+            session.assign_badges(group, 1)
+            session.flush()
+
+            attendee = group.unassigned[0]
+            assert attendee.staffing
+            assert c.VOLUNTEER_RIBBON in attendee.ribbon_ints
+
+    def test_filled_group_badge_is_verified_as_volunteer(self):
+        with Session() as session:
+            group = Group(name='Filled Volunteer Group')
+            session.add(group)
+            session.assign_badges(group, 1)
+            session.flush()
+
+            attendee = group.unassigned[0]
+            attendee.staffing = False
+            attendee.ribbon = ''
+            attendee.first_name = 'Filled'
+            attendee.last_name = 'Volunteer'
+            session.flush()
+
+            assert attendee.staffing
+            assert c.VOLUNTEER_RIBBON in attendee.ribbon_ints
+
+
 class TestStaffingAdjustments:
     @pytest.fixture(autouse=True)
     def unset_volunteering(self, monkeypatch):
