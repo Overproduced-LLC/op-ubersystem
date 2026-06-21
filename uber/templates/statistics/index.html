@@ -120,6 +120,49 @@ This is calculated by taking the Attendee badge type's stock and subtracting the
     {% endfor %}
 </ul>
 
+<h3>Dietary Restrictions by Day Attended</h3>
+<p>
+  Counts are based on each attendee's arrival and departure dates
+  (attendees are counted on each day from arrival up to, but not including, departure).
+  Only valid attendees with both dates set are included.
+</p>
+
+{% if dietary_counts %}
+<div class="table-responsive">
+  <table class="table table-hover table-bordered">
+    <thead>
+      <tr>
+        <th>Date</th>
+        {% for label in dietary_counts.labels %}
+          <th>{{ label }}</th>
+        {% endfor %}
+        <th>Total Present</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in dietary_counts.rows %}
+        <tr>
+          <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
+          {% for label in dietary_counts.labels %}
+            <td>{{ row.counts[label] }}</td>
+          {% endfor %}
+          <td>{{ row.total_present }}</td>
+        </tr>
+      {% endfor %}
+      <tr>
+        <td><strong>Total</strong></td>
+        {% for label in dietary_counts.labels %}
+          <td><strong>{{ dietary_counts.totals[label] }}</strong></td>
+        {% endfor %}
+        <td><strong>{{ dietary_counts.totals.total_present }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% else %}
+  <p><em>No arrival/departure data available for valid attendees.</em></p>
+{% endif %}
+
 Of the "paid by group" badges,
 <br/> {{ counts.groups.paid }} were from groups that actually gave us money, and
 <br/>{{ counts.groups.free }} were from groups that we didn't charge.
