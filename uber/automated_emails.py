@@ -391,7 +391,7 @@ StopsEmailFixture(
     ident='volunteer_shift_signup_reminder_last_chance')
 
 StopsEmailFixture(
-    'Your volunteer checklist for {EVENT_NAME} ({EVENT_DATE})?',
+    'Your volunteer checklist for {EVENT_NAME} ({EVENT_DATE})!',
     'shifts/volunteer_check.txt',
     lambda a: (
         c.VOLUNTEER_CHECKLIST_OPEN

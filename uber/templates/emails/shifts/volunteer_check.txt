@@ -2,6 +2,6 @@
 
 Thanks for preregistering for {{ c.EVENT_NAME }}! {{ c.EVENT_NAME }} is rapidly approaching. Please ensure you've completed the checklist at {{ c.URL_BASE }}/staffing/login?first_name={{ attendee.first_name|urlencode }}&last_name={{ attendee.last_name|urlencode }}&email={{ attendee.email|urlencode }}&zip_code={{ attendee.zip_code|urlencode }}
 
-You're eligible for a free event T-shirt, and the deadline for choosing what size to recieve is {{ c.VOLUNTEER_SHIRT_DEADLINE }}!
+You're eligible for a free event T-shirt, and the deadline for choosing what size to recieve is {{ c.VOLUNTEER_SHIRT_DEADLINE.astimezone(c.EVENT_TIMEZONE).strftime('%B %-e') }}!
 
 {{ c.STOPS_EMAIL_SIGNATURE }}
