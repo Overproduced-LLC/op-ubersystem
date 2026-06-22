@@ -163,6 +163,49 @@ This is calculated by taking the Attendee badge type's stock and subtracting the
   <p><em>No arrival/departure data available for valid attendees.</em></p>
 {% endif %}
 
+<h3>Department Headcounts by Day Attended</h3>
+<p>
+  Counts are based on each attendee's assigned departments and their arrival and departure dates
+  (attendees are counted on each day from arrival up to, but not including, departure).
+  Only valid attendees with both dates set are included.
+</p>
+
+{% if department_headcounts %}
+<div class="table-responsive">
+  <table class="table table-hover table-bordered">
+    <thead>
+      <tr>
+        <th>Department</th>
+        {% for d in department_headcounts.dates %}
+          <th>{{ d.strftime('%Y-%m-%d') }}</th>
+        {% endfor %}
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in department_headcounts.rows %}
+        <tr>
+          <td>{{ row.department }}</td>
+          {% for d in department_headcounts.dates %}
+            <td>{{ row.counts[d] }}</td>
+          {% endfor %}
+          <td>{{ row.total }}</td>
+        </tr>
+      {% endfor %}
+      <tr>
+        <td><strong>Total Present</strong></td>
+        {% for d in department_headcounts.dates %}
+          <td><strong>{{ department_headcounts.totals[d] }}</strong></td>
+        {% endfor %}
+        <td><strong>{{ department_headcounts.totals.values()|sum }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% else %}
+  <p><em>No arrival/departure data available for valid attendees.</em></p>
+{% endif %}
+
 Of the "paid by group" badges,
 <br/> {{ counts.groups.paid }} were from groups that actually gave us money, and
 <br/>{{ counts.groups.free }} were from groups that we didn't charge.

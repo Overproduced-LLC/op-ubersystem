@@ -3,8 +3,15 @@ from datetime import date
 import pytest
 
 from uber.config import c
-from uber.models import Attendee, FoodRestrictions, Session
+from uber.models import Attendee, Department, FoodRestrictions, Session
 from uber.site_sections import statistics
+
+
+def _make_department(session, name):
+    dept = Department(name=name, description=name)
+    session.add(dept)
+    session.commit()
+    return dept
 
 
 def _make_attendee(session, first_name, arrival, departure, restrictions=None, badge_status=None):
@@ -79,3 +86,64 @@ def test_dietary_counts_excludes_invalid_badges():
     gluten_label = c.FOOD_RESTRICTIONS[c.GLUTEN]
     assert result['totals'][gluten_label] == 2
     assert result['totals']['total_present'] == 2
+
+
+def test_department_headcounts_by_day():
+    with Session() as session:
+        broadcast = _make_department(session, 'Broadcast')
+        tech = _make_department(session, 'Tech')
+
+        alice = _make_attendee(session, 'Alice', date(2026, 6, 1), date(2026, 6, 4))
+        bob = _make_attendee(session, 'Bob', date(2026, 6, 2), date(2026, 6, 5))
+        carol = _make_attendee(session, 'Carol', date(2026, 6, 1), date(2026, 6, 3))
+
+        alice.assigned_depts.append(broadcast)
+        bob.assigned_depts.append(broadcast)
+        bob.assigned_depts.append(tech)
+        carol.assigned_depts.append(tech)
+        session.commit()
+
+        result = statistics._department_headcounts_by_day(session)
+
+    assert result['dates'] == [date(2026, 6, 1), date(2026, 6, 2), date(2026, 6, 3), date(2026, 6, 4), date(2026, 6, 5)]
+
+    rows = {row['department']: row for row in result['rows']}
+    assert rows['Broadcast']['counts'][date(2026, 6, 1)] == 1
+    assert rows['Broadcast']['counts'][date(2026, 6, 2)] == 2
+    assert rows['Broadcast']['counts'][date(2026, 6, 3)] == 2
+    assert rows['Broadcast']['counts'][date(2026, 6, 4)] == 1
+    assert rows['Broadcast']['counts'][date(2026, 6, 5)] == 0
+    assert rows['Broadcast']['total'] == 6
+
+    assert rows['Tech']['counts'][date(2026, 6, 1)] == 1
+    assert rows['Tech']['counts'][date(2026, 6, 2)] == 2
+    assert rows['Tech']['counts'][date(2026, 6, 3)] == 1
+    assert rows['Tech']['counts'][date(2026, 6, 4)] == 1
+    assert rows['Tech']['counts'][date(2026, 6, 5)] == 0
+    assert rows['Tech']['total'] == 5
+
+    totals = result['totals']
+    assert totals[date(2026, 6, 1)] == 2
+    assert totals[date(2026, 6, 2)] == 4
+    assert totals[date(2026, 6, 3)] == 3
+    assert totals[date(2026, 6, 4)] == 2
+    assert totals[date(2026, 6, 5)] == 0
+
+
+def test_department_headcounts_excludes_invalid_badges():
+    with Session() as session:
+        broadcast = _make_department(session, 'Broadcast')
+
+        valid = _make_attendee(session, 'Valid', date(2026, 6, 1), date(2026, 6, 3))
+        invalid = _make_attendee(session, 'Invalid', date(2026, 6, 1), date(2026, 6, 3), badge_status=c.INVALID_STATUS)
+
+        valid.assigned_depts.append(broadcast)
+        invalid.assigned_depts.append(broadcast)
+        session.commit()
+
+        result = statistics._department_headcounts_by_day(session)
+
+    rows = {row['department']: row for row in result['rows']}
+    assert rows['Broadcast']['total'] == 2
+    assert result['totals'][date(2026, 6, 1)] == 1
+    assert result['totals'][date(2026, 6, 2)] == 1

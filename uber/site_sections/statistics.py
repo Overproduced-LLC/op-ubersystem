@@ -11,7 +11,7 @@ from sqlalchemy.sql.expression import literal
 from uber.config import c
 from uber.decorators import ajax, all_renderable, csv_file, not_site_mappable
 from uber.jinja import JinjaEnv
-from uber.models import Attendee, Group, PromoCode
+from uber.models import Attendee, Department, Group, PromoCode
 
 
 @JinjaEnv.jinja_filter
@@ -203,6 +203,60 @@ def _dietary_counts(session):
     }
 
 
+def _department_headcounts_by_day(session):
+    valid_statuses = [c.INVALID_GROUP_STATUS, c.INVALID_STATUS, c.IMPORTED_STATUS, c.REFUNDED_STATUS]
+    attendees = session.query(Attendee).options(joinedload(Attendee.assigned_depts)).filter(
+        Attendee.badge_status.notin_(valid_statuses),
+        Attendee.arrival_date != None,
+        Attendee.departure_date != None,
+    ).all()
+
+    if not attendees:
+        return None
+
+    departments = session.query(Department).order_by(Department.name).all()
+
+    min_date = min(a.arrival_date for a in attendees)
+    max_date = max(a.departure_date for a in attendees)
+    date_range = []
+    current = min_date
+    while current <= max_date:
+        date_range.append(current)
+        current += timedelta(days=1)
+
+    counts = {dept.id: {d: 0 for d in date_range} for dept in departments}
+    row_totals = {dept.id: 0 for dept in departments}
+    col_totals = {d: 0 for d in date_range}
+
+    for attendee in attendees:
+        present_days = []
+        day = attendee.arrival_date
+        while day < attendee.departure_date:
+            present_days.append(day)
+            day += timedelta(days=1)
+
+        for dept in attendee.assigned_depts:
+            for d in present_days:
+                counts[dept.id][d] += 1
+                row_totals[dept.id] += 1
+                col_totals[d] += 1
+
+    rows = []
+    for dept in departments:
+        rows.append({
+            'department': dept.name,
+            'counts': counts[dept.id],
+            'total': row_totals[dept.id],
+        })
+
+    return {
+        'dates': date_range,
+        'departments': [dept.name for dept in departments],
+        'rows': rows,
+        'totals': col_totals,
+    }
+
+
 @all_renderable()
 class Root:
     def index(self, session):
@@ -274,6 +328,7 @@ class Root:
         return {
             'counts': counts,
             'dietary_counts': _dietary_counts(session),
+            'department_headcounts': _department_headcounts_by_day(session),
         }
 
     def badges_sold(self, session):
