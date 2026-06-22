@@ -35,7 +35,7 @@ def test_dietary_counts_by_day():
         _make_attendee(session, 'Vegan', date(2026, 6, 2), date(2026, 6, 5), [c.VEGAN])
         _make_attendee(session, 'NoRestrictions', date(2026, 6, 1), date(2026, 6, 3), [])
 
-        result = statistics.Root()._dietary_counts(session)
+        result = statistics._dietary_counts(session)
 
     assert result['dates'] == [date(2026, 6, 1), date(2026, 6, 2), date(2026, 6, 3), date(2026, 6, 4), date(2026, 6, 5)]
 
@@ -74,7 +74,7 @@ def test_dietary_counts_excludes_invalid_badges():
         _make_attendee(session, 'Valid', date(2026, 6, 1), date(2026, 6, 3), [c.GLUTEN])
         _make_attendee(session, 'Invalid', date(2026, 6, 1), date(2026, 6, 3), [c.GLUTEN], badge_status=c.INVALID_STATUS)
 
-        result = statistics.Root()._dietary_counts(session)
+        result = statistics._dietary_counts(session)
 
     gluten_label = c.FOOD_RESTRICTIONS[c.GLUTEN]
     assert result['totals'][gluten_label] == 2

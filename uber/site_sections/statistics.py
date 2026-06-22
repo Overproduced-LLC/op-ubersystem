@@ -149,61 +149,62 @@ class RegistrationDataOneYear:
         }
 
 
+def _dietary_counts(session):
+    valid_statuses = [c.INVALID_GROUP_STATUS, c.INVALID_STATUS, c.IMPORTED_STATUS, c.REFUNDED_STATUS]
+    attendees = session.query(Attendee).options(joinedload(Attendee.food_restrictions)).filter(
+        Attendee.badge_status.notin_(valid_statuses),
+        Attendee.arrival_date != None,
+        Attendee.departure_date != None,
+    ).all()
+
+    if not attendees:
+        return None
+
+    min_date = min(a.arrival_date for a in attendees)
+    max_date = max(a.departure_date for a in attendees)
+    date_range = []
+    current = min_date
+    while current <= max_date:
+        date_range.append(current)
+        current += timedelta(days=1)
+
+    labels = [c.FOOD_RESTRICTIONS[getattr(c, var)] for var in c.FOOD_RESTRICTION_VARS]
+    day_counts = {d: {label: 0 for label in labels} for d in date_range}
+    totals = {label: 0 for label in labels}
+    totals['total_present'] = 0
+
+    for attendee in attendees:
+        present_days = []
+        day = attendee.arrival_date
+        while day < attendee.departure_date:
+            present_days.append(day)
+            day += timedelta(days=1)
+
+        fr = attendee.food_restrictions
+        for day in present_days:
+            day_counts[day]['total_present'] = day_counts[day].get('total_present', 0) + 1
+            totals['total_present'] += 1
+            for var in c.FOOD_RESTRICTION_VARS:
+                label = c.FOOD_RESTRICTIONS[getattr(c, var)]
+                if fr and getattr(fr, var):
+                    day_counts[day][label] += 1
+                    totals[label] += 1
+
+    rows = []
+    for d in date_range:
+        row = {'date': d, 'counts': day_counts[d], 'total_present': day_counts[d].get('total_present', 0)}
+        rows.append(row)
+
+    return {
+        'dates': date_range,
+        'labels': labels,
+        'rows': rows,
+        'totals': totals,
+    }
+
+
 @all_renderable()
 class Root:
-    def _dietary_counts(self, session):
-        valid_statuses = [c.INVALID_GROUP_STATUS, c.INVALID_STATUS, c.IMPORTED_STATUS, c.REFUNDED_STATUS]
-        attendees = session.query(Attendee).options(joinedload(Attendee.food_restrictions)).filter(
-            Attendee.badge_status.notin_(valid_statuses),
-            Attendee.arrival_date != None,
-            Attendee.departure_date != None,
-        ).all()
-
-        if not attendees:
-            return None
-
-        min_date = min(a.arrival_date for a in attendees)
-        max_date = max(a.departure_date for a in attendees)
-        date_range = []
-        current = min_date
-        while current <= max_date:
-            date_range.append(current)
-            current += timedelta(days=1)
-
-        labels = [c.FOOD_RESTRICTIONS[getattr(c, var)] for var in c.FOOD_RESTRICTION_VARS]
-        day_counts = {d: {label: 0 for label in labels} for d in date_range}
-        totals = {label: 0 for label in labels}
-        totals['total_present'] = 0
-
-        for attendee in attendees:
-            present_days = []
-            day = attendee.arrival_date
-            while day < attendee.departure_date:
-                present_days.append(day)
-                day += timedelta(days=1)
-
-            fr = attendee.food_restrictions
-            for day in present_days:
-                day_counts[day]['total_present'] = day_counts[day].get('total_present', 0) + 1
-                totals['total_present'] += 1
-                for var in c.FOOD_RESTRICTION_VARS:
-                    label = c.FOOD_RESTRICTIONS[getattr(c, var)]
-                    if fr and getattr(fr, var):
-                        day_counts[day][label] += 1
-                        totals[label] += 1
-
-        rows = []
-        for d in date_range:
-            row = {'date': d, 'counts': day_counts[d], 'total_present': day_counts[d].get('total_present', 0)}
-            rows.append(row)
-
-        return {
-            'dates': date_range,
-            'labels': labels,
-            'rows': rows,
-            'totals': totals,
-        }
-
     def index(self, session):
         counts = defaultdict(OrderedDict)
         counts['donation_tiers'] = OrderedDict([(k, 0) for k in sorted(c.DONATION_TIERS.keys()) if k > 0])
@@ -272,7 +273,7 @@ class Root:
 
         return {
             'counts': counts,
-            'dietary_counts': self._dietary_counts(session),
+            'dietary_counts': _dietary_counts(session),
         }
 
     def badges_sold(self, session):
